@@ -1,0 +1,8 @@
+numpy>=1.9.1
+pykdtree>=0.2
+
+[LAS]
+laspy
+
+[numba]
+numba
