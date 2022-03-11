@@ -88,32 +88,64 @@ def all_in_four(datadict,k,N_ma, N_normals,centroid):
     set_plot_position()
     plt.show()
 
-def all_in_four_2(datadict,k,N_ma, N_normals,centroid, original_coords, original_normals):
+def all_in_four_2(datadict,neighbours,N_ma, N_normals,centroid, original_coords, original_normals):
 
     fig, axs = plt.subplots(2,2)
+    plt.tight_layout()
     axs[0,0].scatter(datadict['coords'][:,0], datadict['coords'][:,1], label='coords')
     axs[0,0].scatter(centroid[0],centroid[1], label='centroid')
     axs[0,0].quiver(datadict['coords'][:, 0], datadict['coords'][:, 1], datadict['normals'][:, 0], datadict['normals'][:, 1], pivot='tip', label='normal vectors')
     axs[0,0].set_title('Coordinates, length='+str(len(datadict['coords']))+', N='+str(N_ma))
+    axs[0,0].set_aspect('equal',adjustable='datalim')
     axs[0,0].legend()
 
     axs[0,1].scatter(centroid[0], centroid[1], label='centroid')
     axs[0,1].quiver(original_coords[:,0],original_coords[:,1],original_normals[:,0],original_normals[:,1], pivot='tip', label='normal vectors')
     axs[0,1].scatter(original_coords[:,0],original_coords[:,1],original_normals[:,0])
-    axs[0,1].set_title('Normal vectors, k=' + str(k) + ' n = ' + str(N_normals))
+    axs[0,1].set_title('Normal vectors, k=' + str(neighbours) + ' n = ' + str(N_normals))
+    axs[0,1].set_aspect('equal', adjustable='datalim')
 
     axs[1,0].scatter(datadict['ma_coords_in'][:,0], datadict['ma_coords_in'][:,1], label='internal coords')
     axs[1,0].scatter(datadict['ma_coords_out'][:, 0], datadict['ma_coords_out'][:, 1], label='external coords')
     axs[1,0].set_title('Internal coordinates')
     axs[1,0].legend()
+    axs[1,0].set_aspect('equal', adjustable='datalim')
 
     axs[1,1].scatter(centroid[0], centroid[1], label='centroid')
     axs[1,1].scatter(datadict['coords'][:, 0], datadict['coords'][:, 1], label='coords')
     axs[1,1].scatter(datadict['ma_coords_in'][:, 0], datadict['ma_coords_in'][:, 1], label='internal points')
     axs[1,1].quiver(datadict['coords'][:, 0], datadict['coords'][:, 1], datadict['normals'][:, 0], datadict['normals'][:, 1],  pivot='tip', label='normal vectors')
-    axs[1,1].scatter(datadict['ma_coords_out'][:, 0], datadict['ma_coords_out'][:, 1], label='external points')
+    #axs[1,1].scatter(datadict['ma_coords_out'][:, 0], datadict['ma_coords_out'][:, 1], label='external points')
     axs[1,1].legend()
     axs[1,1].set_title('All together')
+    axs[1,1].set_aspect('equal', adjustable='datalim')
+    set_plot_position()
+
+    plt.show()
+
+def midlines(midlines_unfiltered, midlines, midlines_interpolated, coords):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plt.scatter(midlines_unfiltered[:, 0], midlines_unfiltered[:, 1])
+    plt.scatter(midlines[:, 0], midlines[:, 1])
+    plt.scatter(coords[:, 0], coords[:, 1])
+    plt.plot(midlines_interpolated[:,0],midlines_interpolated[:,1])
+    plt.title("All midlines with any point outside body boundary removed")
+    ax.set_aspect('equal', adjustable='datalim')
+    plt.show()
+
+def rib_approx(coords,rib_midline,midline_angles,midline_angles_change):
+    fig, ax= plt.subplots(2,1)
+
+    ax[0].plot(rib_midline[:, 0], rib_midline[:, 1], '-o')
+    ax[0].scatter(coords[:, 0], coords[:, 1])
+    #plt.plot(midlines_interpolated[:, 0], midlines_interpolated[:, 1])
+    plt.title("Rib midlines")
+
+    ax[1].plot(midline_angles)
+    ax[1].plot(midline_angles_change)
+
+    ax[0].set_aspect('equal', adjustable='datalim')
     set_plot_position()
     plt.show()
 
@@ -137,3 +169,5 @@ def print_dictionary_info(dict,max_r):
         if np.isnan(i[1]):
             nan_count += 1
     print("NaN percentage in external points: " + str((nan_count/(len(dict['ma_coords_out']*2)))))
+
+
