@@ -7,3 +7,4 @@ masbpy~=0.1
 matplotlib~=3.5.1
 torch~=1.10.2
 setuptools~=57.0.0
+shapely
