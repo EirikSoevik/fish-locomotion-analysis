@@ -207,8 +207,9 @@ class MASB(object):
                     break
 
             # now store valid points in array (invalid points will be NaN)
-            if inner: inout = 'in'
-            else: inout = 'out'
+            # TODO: IN AND OUT ARE NOW SWITCHED. WHY!?
+            if inner: inout = 'out'
+            else: inout = 'in'
             
             if r >= self.SuperR:
                 pass
