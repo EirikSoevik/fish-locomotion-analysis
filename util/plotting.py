@@ -149,6 +149,20 @@ def rib_approx(coords,rib_midline,midline_angles,midline_angles_change):
     set_plot_position()
     plt.show()
 
+def spline_plot(my_spline,coords, spline_x):
+    fig, ax = plt.subplots(1)
+
+    ax.plot(spline_x, my_spline(spline_x), '-o')
+    ax.scatter(coords[:, 0], coords[:, 1])
+    #plt.plot(midlines_interpolated[:, 0], midlines_interpolated[:, 1])
+    plt.title("Rib midlines")
+
+
+    ax.set_aspect('equal', adjustable='datalim')
+    set_plot_position()
+    plt.show()
+
+
 def print_dictionary_info(dict,max_r):
     #print("Max radius = " + '{%4.2f}'.format(max_r))
     print('Max radius = %.1f' %max_r)
