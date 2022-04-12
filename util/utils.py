@@ -122,8 +122,16 @@ def midline_rib_approximation(coords, new_len):
             print("i: " + str(i))
             print("midline[i] = nan")
         elif batch_count > 0:
-            midline[i, 1] = np.mean(batch_y)
-            midline[i, 0] = np.mean(batch_x)
+            if i==0:
+                midline[0, 0] = x_start
+                midline[0,1] = np.mean(batch_y)
+            elif i==(len(x_new) - 2):
+                print("end case!")
+                midline[i,0] = x_end
+                midline[i,1] = np.mean(batch_y)
+            else:
+                midline[i, 0] = np.mean(batch_x)
+                midline[i, 1] = np.mean(batch_y)
         else:
             print("Something wrong!")
             breakpoint()

@@ -2,6 +2,11 @@ import numpy as np
 import os
 from util.utils import find_centroid
 from scipy.interpolate import interp1d
+import analysis.plotting as aplt
+from scipy.fft import fft,fftfreq
+import matplotlib.pyplot as plt
+
+
 
 def get_attributes(my_dir):
     """Creates a time-sorted dictionary with all information, which can then be looped to access specifics"""
@@ -117,7 +122,7 @@ def axis_transformation(midlines_x, midlines_y, centroid, coords_x, coords_y):
 
     return midline_new_x, midline_new_y, new_centroid, new_coords_x, new_coords_y
 
-def get_average_midline_length(midlines_x, midlines_y):
+def get_average_midline_length(midlines_x, midlines_y, plotting):
     """Approximates a mean midline length based on all midlines"""
     time, space = midlines_x.shape
     dl = np.zeros([time, space-1])
@@ -139,10 +144,12 @@ def get_average_midline_length(midlines_x, midlines_y):
     mean_length = np.mean(l)
 
     import matplotlib.pyplot as plt
-    plt.figure()
-    n, bins, patches = plt.hist(l)
-    plt.title("Mean length of midline")
-    plt.show()
+    if plotting:
+        plt.figure()
+        n, bins, patches = plt.hist(l)
+        plt.title("Mean length of midline")
+        aplt.set_plot_position()
+        plt.show()
 
     print("Property          | Mean    | Std. dev ")
     print("----------------------------------------")
@@ -201,3 +208,75 @@ def axis_transformation2(midlines_x, midlines_y, centroid, coords_x, coords_y, s
         new_centroid[r_c, 1] = (centroid[r_c, 1] - origo_y) / (np.max(coords_x[r_c, :]) - np.min(coords_x[r_c, :]))
 
     return midline_new_x, midline_new_y, new_centroid, new_coords_x, new_coords_y
+
+
+def fourier_analysis(midline_x, midline_y, std_length):
+
+    time, space = midline_x.shape
+    N = space # number of sample points
+    T = std_length # sample spacing
+    f_y = np.zeros([time, space])
+
+    for t in range(time):
+
+        f_x = fftfreq(N,T)[:N//2]
+        f_y[t] = fft(midline_y[t,:])
+
+
+    #aplt.fourier_animation(f_x,f_y,N)
+
+    #aplt.fourier_plot(f_x,f_y,N)
+
+    return f_x, f_y
+
+def singular_fourier_analysis(midline_x, midline_y, std_length):
+    """ FFT of Time history of each point"""
+
+
+    time, space = midline_x.shape
+    N = space # number of sample points
+    T = std_length # sample spacing
+    f_y = np.zeros([time, space])
+
+    for s in range(space):
+
+        f_x = fftfreq(N,T)[:N//2]
+        f_y[s] = fft(midline_y[:,s])
+
+    #aplt.fourier_animation(f_x,f_y,N)
+
+    #aplt.fourier_plot(f_x,f_y,N)
+
+    return f_x, f_y
+
+def approximate_steering():
+    """Find y_1(x) = C(x²+gamma*x+beta)"""
+
+def find_position(midlines_x, midlines_y, sample_iteration=0, tol=0.1):
+    """Finds the same body position in time so that one period can be analysed"""
+
+    time, space = midlines_x.shape
+
+    sample_1 = np.vstack((midlines_x[sample_iteration,:], midlines_y[sample_iteration,:])).T
+    sample_x = midlines_x[sample_iteration,:]
+    sample_y = midlines_y[sample_iteration,:]
+    p_it = -1
+
+    for t in range(sample_iteration+1,time):
+            #x_diff = sum(midlines_x[t,:]-sample_x)
+            y_diff = sum(midlines_y[t,:]-sample_y)
+            if y_diff<tol:
+                p_it = t
+                sample_match_x = midlines_x[t,:]
+                sample_match_y = midlines_y[t,:]
+
+    if p_it < 0:
+        raise Exception("Could not find matching position in time")
+
+    print("Start it: " + str(sample_iteration) + "end it: " + str(p_it))
+    return p_it, sample_match_x, sample_match_y
+
+def space_mirroring(midlines_x,midlines_y):
+    """Mirrors midlines in the x-direction to be able to utilize fourier analysis"""
+
+    

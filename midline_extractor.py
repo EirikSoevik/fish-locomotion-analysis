@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     my_dir = "my_data/mask_output_Feb-17-2022_1216/masks/"
     dir_files = os.listdir(my_dir)
-    save = True  # set to True to save all calculations, set to False to not save anything
+    save = False  # set to True to save all calculations, set to False to not save anything
     N_midline = 20
     plotting = True
     start_time = time.time()
