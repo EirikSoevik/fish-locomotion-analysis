@@ -34,7 +34,7 @@ def main():
     dir_files = os.listdir(my_dir)
 
     save = True
-    plotting = True
+    plotting = False
     spline_length = 15
 
     dict_list = autil.get_attributes(my_dir)
@@ -54,9 +54,13 @@ def main():
 
     spline_x, my_splines = autil.midline_spline(new_midlines_x,new_midlines_y,spline_length,interp_kind='linear')
 
-    f_x, f_y = autil.fourier_analysis(new_midlines_x,new_midlines_y, std_length)
+    midlines_x_mirrored, midlines_y_mirrored = autil.space_mirroring(midlines_x,midlines_y)
+    new_midlines_x_mirrored, new_midlines_y_mirrored = autil.space_mirroring(new_midlines_x, new_midlines_y)
 
-    p_it, sample_match_x, sample_match_y = autil.find_position(midlines_x=midlines_x,midlines_y=midlines_y, sample_iteration=0,tol=0.1)
+    xf, yf = autil.rfft_2D(midlines_x_mirrored,midlines_y_mirrored,std_length)
+    #f_x, f_y = autil.fourier_analysis(midlines_x_mirrored,midlines_y_mirrored, std_length)
+
+    #p_it, sample_match_x, sample_match_y = autil.find_position(midlines_x=midlines_x,midlines_y=midlines_y, sample_iteration=0,tol=0.1)
 
     if plotting == True:
         #aplt.midline_animation(x=new_midlines_x, y=new_midlines_y)
@@ -67,9 +71,10 @@ def main():
         #                           midlines_y=new_midlines_y, centroid=new_centroid)
         aplt.spline_plotting(my_splines,spline_x,new_coords_x,new_coords_y,new_midlines_x,new_midlines_y,new_centroid)
 
-        aplt.fourier_plot(f_x, f_y, N)
-        aplt.fourier_animation(f_x, f_y, N)
+        #aplt.fourier_plot(f_x, f_y, N*2)
+        #aplt.fourier_animation(f_x, f_y, N*2)
    # aplt.spline_plotting(my_splines, spline_x, new_coords_x, new_coords_y, new_midlines_x, new_midlines_y, new_centroid)
+
     aplt.spline_plot(spline_x,my_splines)
 
     print("Finished main")

@@ -216,10 +216,11 @@ def fourier_analysis(midline_x, midline_y, std_length):
     N = space # number of sample points
     T = std_length # sample spacing
     f_y = np.zeros([time, space])
+    f_x = np.zeros([time, space])
 
     for t in range(time):
 
-        f_x = fftfreq(N,T)[:N//2]
+        f_x[t] = fftfreq(N,T)[:N//2]
         f_y[t] = fft(midline_y[t,:])
 
 
@@ -248,6 +249,33 @@ def singular_fourier_analysis(midline_x, midline_y, std_length):
     #aplt.fourier_plot(f_x,f_y,N)
 
     return f_x, f_y
+
+def rfft_2D(midlines_x,midlines_y,  std_length):
+    """Input: mirrored midlines"""
+    from scipy.fft import rfft2
+    import matplotlib.cm as cm
+
+    #f, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2,3, sharex='col', sharey='row')
+    #xf = np.zeros((N,N))
+    #xf = np.zeros((N,N))
+
+    time, space = midlines_x.shape
+
+    xf = np.zeros([time,space//2])
+    yf = np.zeros([time,space])
+
+    for t in range(time):
+        yf[t,:] = fft(midlines_y[t, :])
+        xf[t,:] = fftfreq(space, std_length)[:space//2]
+
+        # plt.figure()
+        # plt.plot(yf[t,:])
+        # plt.show()
+        # #time.sleep(1)
+
+    aplt.fft_plot(xf,yf)
+
+    return xf, yf
 
 def approximate_steering():
     """Find y_1(x) = C(x²+gamma*x+beta)"""
@@ -278,5 +306,28 @@ def find_position(midlines_x, midlines_y, sample_iteration=0, tol=0.1):
 
 def space_mirroring(midlines_x,midlines_y):
     """Mirrors midlines in the x-direction to be able to utilize fourier analysis"""
+    time, space = midlines_x.shape
 
-    
+    midlines_x_mirrored = np.zeros([time, space*2])
+    midlines_y_mirrored = np.zeros([time, space*2])
+
+    for t in range(time):
+        midlines_x_mirrored[t,0:space] = -np.flip(midlines_x[t,:])
+        midlines_x_mirrored[t,space:2*space] = midlines_x[t,:]
+
+        midlines_y_mirrored[t,0:space] = np.flip(midlines_y[t,:])
+        midlines_y_mirrored[t,space:2*space] = midlines_y[t,:]
+
+        # for s in range(space-1,-1,-1):
+        #     midlines_x_mirrored[t, s] = -midlines_x[t, s]
+        #     midlines_y_mirrored[t, s] = midlines_y[t, s]
+        #
+        # for s in range(space-1):
+        #     midlines_x_mirrored[t, s] = midlines_x[t, s + space]
+        #     midlines_y_mirrored[t, s] = midlines_y[t, s + space]
+
+        # plt.figure()
+        # plt.plot(midlines_x_mirrored[t,:],midlines_y_mirrored[t,:])
+        # plt.show()
+
+    return midlines_x_mirrored, midlines_y_mirrored

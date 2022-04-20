@@ -144,6 +144,7 @@ def spline_plotting(my_splines,spline_x,coords_x, coords_y, midlines_x, midlines
 
 def spline_plot(spline_x, my_splines):
 
+    plt.figure()
 
     for i in range(len(my_splines)):
         #plt.plot(spline_x,my_splines[i])
@@ -187,3 +188,32 @@ def fourier_animation(f_x, f_y,N):
 
     figure.canvas.flush_events()
 
+def fft_plot(fx, fy):
+
+    ftime, N = fy.shape
+
+    plt.ion()
+    figure, ax = plt.subplots(figsize=(10, 8))
+    #line1, = ax.plot(fx[0,:],fy[0,:])
+    line1, = ax.plot(fx[0, :], 2.0 / N * np.abs(fy[0, 0:N//2]))
+
+    #ax.set_aspect('equal',adjustable='datalim')
+    plt.title("Fourier analysis of midline for frame: 0" )
+    plt.xlabel("frequency")
+    plt.ylabel("amplitude")
+    set_plot_position()
+
+
+    #2.0 / N * np.abs(f_y[i, 0:N // 2])
+    for i in range(1,ftime):
+        #line1.set_xdata(fx[i,:])
+        #line1.set_ydata(fy[i,:])
+        line1.set_xdata(fx[i,:])
+        line1.set_ydata(2.0 / N * np.abs(fy[i, 0:N//2]))
+        figure.canvas.draw()
+        plt.title("Fourier analysis of midline for frame: " + str(i))
+        figure.canvas.flush_events()
+
+        time.sleep(0.1)
+
+    figure.canvas.flush_events()
