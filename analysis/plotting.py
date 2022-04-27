@@ -142,7 +142,7 @@ def spline_plotting(my_splines,spline_x,coords_x, coords_y, midlines_x, midlines
 
     figure.canvas.flush_events()
 
-def spline_plot(spline_x, my_splines):
+def all_splines_plot(spline_x, my_splines):
 
     plt.figure()
 
@@ -155,9 +155,8 @@ def spline_plot(spline_x, my_splines):
 def fourier_plot(f_x,f_y,N):
 
     plt.figure()
-    plt.plot(f_x, 2.0 / N * np.abs(f_y[0:N // 2]))
-    #plt.plot(f_x, f_x)
-    #plt.plot([0,1,2,3,4],[8,6,7,8,4])
+    #plt.plot(f_x, 2.0 / N * np.abs(f_y[0:N // 2]))
+    plt.plot(f_x, f_y)
     plt.xlabel("f_x")
     plt.ylabel("f_y")
     plt.title("f_X/f_y fourier plot")
@@ -166,25 +165,27 @@ def fourier_plot(f_x,f_y,N):
 
 def fourier_animation(f_x, f_y,N):
 
-    rows, col = f_y.shape
+    freq_dim, space_dim = f_y.shape
 
     plt.ion()
     figure, ax = plt.subplots(figsize=(10, 8))
-    line1, = ax.plot(f_x,2.0 / N * np.abs(f_y[0,0:N // 2]))
-    ax.set_aspect('equal',adjustable='datalim')
-    plt.title("Midline spline fourier animation")
-    plt.xlabel("x-axis")
-    plt.ylabel("y-axis")
+    line1, = ax.plot(f_x,f_y[:,0])
+    #ax.set_aspect('equal',adjustable='datalim')
+    plt.xlim([0,max(f_x)*1.1])
+    plt.ylim([0, f_y.max()*1.1])
+    plt.title("Midline point fourier analysis for index 0")
+    plt.xlabel("f [Hz]")
+    plt.ylabel("|f_y|")
     set_plot_position()
 
-    for i in range(1,rows):
+    for s in range(1,space_dim):
         line1.set_xdata(f_x)
-        line1.set_ydata(2.0 / N * np.abs(f_y[i, 0:N // 2]))
+        line1.set_ydata(f_y[:,s])
         figure.canvas.draw()
-
+        plt.title("Midline point fourier analysis for index " + str(s))
         figure.canvas.flush_events()
 
-        time.sleep(0.1)
+        time.sleep(1)
 
     figure.canvas.flush_events()
 

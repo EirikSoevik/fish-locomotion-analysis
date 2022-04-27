@@ -13,20 +13,31 @@ import matplotlib.pyplot as plt
 def rib_approximator_setup(my_file, outdir, save, plotting, N_midline):
 
     start_time = time.time()
-    coords = np.load(outdir + my_file + "/" + my_file + ".npy")
+    coords = np.load(outdir + "/" + my_file + "/" + my_file + ".npy")
+    #coords = np.load(outdir+"/"+my_file)
     centroid = utils.find_centroid(coords=coords,outdir=outdir,save=False)
     midline_rib_approx = utils.midline_rib_approximation(coords, N_midline)
     midline_angles, midline_angles_change = utils.midline_angles(midline_rib_approx)
     #spline_x, my_spline = utils.midline_spline(midline=midline_rib_approx,spline_length=N_midline,interp_kind='quadratic')
+    from pathlib import Path
     if save:
-        np.save(outdir+my_file+"/coords.npy",coords)
-        np.save(outdir+my_file+"/midline.npy", midline_rib_approx)
-        np.save(outdir+my_file+"/midline_angles.npy", midline_angles)
-        np.save(outdir+my_file+"/midline_angles_change.npy", midline_angles_change)
-        np.save(outdir+my_file+"/centroid.npy",centroid)
-        print("Saved " + outdir+my_file)
-    end_time = time.time()
+        path_filename = Path(my_file)
+        my_file_nosuffix = str(path_filename.with_suffix(''))
 
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+        #if not os.path.exists(outdir+"/images"):
+        #    os.makedirs(outdir + "/images")
+        #if not os.path.exists(outdir+"/"+my_file):
+        #    os.makedirs(outdir+"/"+my_file)
+
+        np.save(outdir+"/"+my_file_nosuffix+"/coords.npy",coords)
+        np.save(outdir+"/"+my_file_nosuffix+"/midline.npy", midline_rib_approx)
+        np.save(outdir+"/"+my_file_nosuffix+"/midline_angles.npy", midline_angles)
+        np.save(outdir+"/"+my_file_nosuffix+"/midline_angles_change.npy", midline_angles_change)
+        np.save(outdir+"/"+my_file_nosuffix+"/centroid.npy",centroid)
+        print("Saved " + outdir+"/"+my_file)
+    end_time = time.time()
 
     if plotting:
         uplt.rib_approx(coords=coords, rib_midline=midline_rib_approx, midline_angles=midline_angles,midline_angles_change=midline_angles_change)
@@ -36,11 +47,12 @@ def rib_approximator_setup(my_file, outdir, save, plotting, N_midline):
 
 if __name__ == "__main__":
 
-    my_dir = "my_data/mask_output_Feb-17-2022_1216/masks/"
+    #my_dir = "my_data/mask_output_Feb-17-2022_1216/masks/"
+    my_dir = "my_data/mask_output_april_Apr-27-2022_1336/masks"
     dir_files = os.listdir(my_dir)
-    save = False  # set to True to save all calculations, set to False to not save anything
+    save = True # set to True to save all calculations, set to False to not save anything
     N_midline = 20
-    plotting = True
+    plotting = False
     start_time = time.time()
     for my_file in dir_files:
         rib_approximator_setup(my_file=my_file, outdir=my_dir, save=save, plotting=plotting, N_midline=N_midline)

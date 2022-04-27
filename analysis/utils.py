@@ -122,7 +122,7 @@ def axis_transformation(midlines_x, midlines_y, centroid, coords_x, coords_y):
 
     return midline_new_x, midline_new_y, new_centroid, new_coords_x, new_coords_y
 
-def get_average_midline_length(midlines_x, midlines_y, plotting):
+def compute_average_midline_length(midlines_x, midlines_y, plotting):
     """Approximates a mean midline length based on all midlines"""
     time, space = midlines_x.shape
     dl = np.zeros([time, space-1])
@@ -210,19 +210,22 @@ def axis_transformation2(midlines_x, midlines_y, centroid, coords_x, coords_y, s
     return midline_new_x, midline_new_y, new_centroid, new_coords_x, new_coords_y
 
 
-def fourier_analysis(midline_x, midline_y, std_length):
+def fourier_analysis(midline_x, midline_y, std_length,T):
 
-    time, space = midline_x.shape
-    N = space # number of sample points
-    T = std_length # sample spacing
-    f_y = np.zeros([time, space])
-    f_x = np.zeros([time, space])
+    x_vec = midline_x[:,-1]
+    y_vec = midline_y[:,-1]
 
-    for t in range(time):
+    N = len(x_vec) # number of sample points
 
-        f_x[t] = fftfreq(N,T)[:N//2]
-        f_y[t] = fft(midline_y[t,:])
+    #T = 1/50 # sample spacing
 
+    y_vec = y_vec - np.mean(y_vec)
+
+    f_x = fftfreq(N,T)[:N//2]
+    f_y = fft(y_vec)
+
+    f_y_abs = 2.0 / N * np.abs(f_y[0:N // 2])
+    aplt.fourier_plot(f_x,f_y,N)
 
     #aplt.fourier_animation(f_x,f_y,N)
 
@@ -230,23 +233,32 @@ def fourier_analysis(midline_x, midline_y, std_length):
 
     return f_x, f_y
 
-def singular_fourier_analysis(midline_x, midline_y, std_length):
-    """ FFT of Time history of each point"""
+def fourier_analysis_all(midline_x, midline_y, T):
+    """ FFT of time history of each point
 
+    Removes mean position from signal so it doesn't disturb the results
+    Returns absolute value of fourier analysis result
+    """
 
-    time, space = midline_x.shape
-    N = space # number of sample points
-    T = std_length # sample spacing
-    f_y = np.zeros([time, space])
+    time_dim, space_dim = midline_x.shape
+    N = time_dim # number of sample points
+    f_x = fftfreq(N, T)[:N // 2]
+    f_y = np.zeros([len(f_x), space_dim])
 
-    for s in range(space):
+    for s in range(space_dim):
 
-        f_x = fftfreq(N,T)[:N//2]
-        f_y[s] = fft(midline_y[:,s])
+        x_vec = midline_x[:, s]
+        y_vec = midline_y[:, s]
 
-    #aplt.fourier_animation(f_x,f_y,N)
+        y_vec = y_vec - np.mean(y_vec)
+        f_y1 = fft(y_vec)
+        f_y[:,s] = 2.0 / N * np.abs(f_y1[0:N // 2])
 
-    #aplt.fourier_plot(f_x,f_y,N)
+    aplt.fourier_plot(f_x, f_y, N)
+
+    aplt.fourier_animation(f_x,f_y,N)
+
+    # aplt.fourier_plot(f_x,f_y,N)
 
     return f_x, f_y
 
