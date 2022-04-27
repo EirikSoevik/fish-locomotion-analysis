@@ -48,16 +48,18 @@ def rib_approximator_setup(my_file, outdir, save, plotting, N_midline):
 if __name__ == "__main__":
 
     #my_dir = "my_data/mask_output_Feb-17-2022_1216/masks/"
-    my_dir = "my_data/mask_output_april_Apr-27-2022_1336/masks"
+    my_dir = "my_data/mask_output_april_Apr-27-2022_1618/masks"
     dir_files = os.listdir(my_dir)
     save = True # set to True to save all calculations, set to False to not save anything
     N_midline = 20
     plotting = False
     start_time = time.time()
+    count = 0
     for my_file in dir_files:
         rib_approximator_setup(my_file=my_file, outdir=my_dir, save=save, plotting=plotting, N_midline=N_midline)
+        count += 1
     end_time = time.time()
-    print("Finished midline_extractor.py in {sec:2.3f} seconds".format(sec=end_time-start_time))
+    print("Finished midline_extractor.py, processing " + str(count) + " files in {sec:2.3f} seconds".format(sec=end_time-start_time))
 
 
 

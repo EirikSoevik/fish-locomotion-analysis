@@ -33,7 +33,7 @@ def main():
     """
 
     #my_dir = "my_data/mask_output_Feb-17-2022_1216/masks/"
-    my_dir = "my_data/mask_output_april_Apr-27-2022_1336/masks/"
+    my_dir = "my_data/mask_output_april_Apr-27-2022_1618/masks/"
     dir_files = os.listdir(my_dir)
 
     save = True
