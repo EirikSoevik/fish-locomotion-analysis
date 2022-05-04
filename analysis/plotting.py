@@ -5,6 +5,24 @@ import time
 import numpy as np
 import matplotlib.animation as FuncAnimation
 
+
+""" Plots available:
+
+    - midline_animation(x,y)
+    - midline_animation_centroid(x, y,centroid)
+    - body_midline_centroid(coords_x, coords_y, midlines_x, midlines_y, centroid)
+    - spline_plotting(my_splines,spline_x,coords_x, coords_y, midlines_x, midlines_y, centroid)
+    - all_splines_plot(spline_x, my_splines, my_title, save_dir, save=False)
+    - fourier_plot(f_x,f_y,N, my_title, save_dir, save=False)
+    - fourier_animation(f_x, f_y,N)
+    - fft_plot(fx, fy)
+    - point_in_time(my_array, my_title, save_dir, pos=-1,save=False)
+    - all_point_in_time(my_array, my_title, save_dir,save=False)
+    - midlines_centroid_in_time(midline_x, midline_y,centroid)
+    - histogram(l, my_title, save_dir, save=False)
+    - simple_plot(vec, my_title, save_dir, save=False)
+"""
+
 def set_plot_position(x=3100,y=100,dx=2000,dy=900):
     """Sets plot position the desired position"""
     # set plot position
@@ -24,7 +42,7 @@ def midline_animation(x, y):
     figure, ax = plt.subplots(figsize=(10, 8))
     line1, = ax.plot(x[0,:],y[0,:])
     ax.set_aspect('equal',adjustable='datalim')
-    plt.title("Midline")
+    plt.title("Midline frame 0 of " + str(rows))
     plt.xlabel("x-axis")
     plt.ylabel("y-axis")
     set_plot_position()
@@ -32,7 +50,7 @@ def midline_animation(x, y):
     for i in range(1,rows):
         line1.set_xdata(x[i,:])
         line1.set_ydata(y[i,:])
-
+        plt.title("Midline frame " + str(i) +" of " + str(rows))
         figure.canvas.draw()
 
         figure.canvas.flush_events()
@@ -142,17 +160,21 @@ def spline_plotting(my_splines,spline_x,coords_x, coords_y, midlines_x, midlines
 
     figure.canvas.flush_events()
 
-def all_splines_plot(spline_x, my_splines):
+def all_splines_plot(spline_x, my_splines, my_title, save_dir, save=False):
 
     plt.figure()
 
     for i in range(len(my_splines)):
         #plt.plot(spline_x,my_splines[i])
         plt.plot(spline_x, my_splines[i](spline_x))
-        plt.title("all splines")
-        plt.show()
 
-def fourier_plot(f_x,f_y,N):
+    plt.title("all splines")
+    plt.show()
+
+    if save:
+        plt.savefig(save_dir+my_title+".png")
+
+def fourier_plot(f_x,f_y,N, my_title, save_dir, save=False):
 
     plt.figure()
     #plt.plot(f_x, 2.0 / N * np.abs(f_y[0:N // 2]))
@@ -162,6 +184,9 @@ def fourier_plot(f_x,f_y,N):
     plt.title("f_X/f_y fourier plot")
     set_plot_position()
     plt.show()
+    if save:
+        plt.savefig(save_dir+my_title+".png")
+
 
 def fourier_animation(f_x, f_y,N):
 
@@ -218,3 +243,99 @@ def fft_plot(fx, fy):
         time.sleep(0.1)
 
     figure.canvas.flush_events()
+
+def point_in_time(my_array, my_title, save_dir, pos=-1,save=False):
+    """Plot a single midline point in time to evaluate swimming period"""
+
+    plt.figure()
+    plt.plot(my_array[:, pos])
+    plt.title(my_title + " : position " + str(pos))
+    plt.xlabel("frame from start, [s * 1/50]")
+    plt.ylabel("Position")
+    plt.show()
+    if save:
+        plt.savefig(save_dir+my_title+".png")
+
+def all_point_in_time(my_array, my_title, save_dir,save=False):
+    """Plot a single midline point in time to evaluate swimming period"""
+
+    plt.figure()
+    plt.plot(my_array)
+    plt.title(my_title)
+    plt.xlabel("frame from start, [s * 1/50]")
+    plt.ylabel("Position")
+    plt.show()
+    if save:
+        plt.savefig(save_dir+my_title+".png")
+
+def midlines_centroid_in_time(midline_x, midline_y,centroid, my_title, save_dir, save=False):
+
+    fig, axs = plt.subplots(2,2)
+    plt.tight_layout()
+
+    axs[0, 0].plot(midline_x)
+    axs[0, 0].set_title("midline x")
+    axs[0, 0].set(ylabel="x-direction")
+    axs[0, 0].set(xlabel="timeframes")
+
+    axs[0, 1].plot(midline_y)
+    axs[0, 1].plot(centroid[:,1],'rv')
+    axs[0, 1].set_title("midline y")
+    axs[0, 1].set(ylabel="y-direction")
+    axs[0, 1].set(xlabel="timeframes")
+
+    axs[1, 0].plot(centroid[:,0])
+    axs[1, 0].set_title("centroid x")
+    axs[1, 0].set(xlabel="timeframes")
+    axs[1, 0].set(ylabel="x-direction")
+
+    axs[1, 1].plot(centroid[:,1])
+    axs[1, 1].set_title("centroid y")
+    axs[1, 1].set(xlabel="timeframes")
+    axs[1, 1].set(ylabel="y-direction")
+
+    plt.show()
+
+    if save:
+        plt.savefig(save_dir+my_title+".png")
+
+
+def histogram(l, my_title, save_dir, save=False):
+    plt.figure()
+    n, bins, patches = plt.hist(l)
+    plt.title(my_title)
+    set_plot_position()
+    plt.show()
+
+    if save:
+        plt.savefig(save_dir+my_title+".png")
+
+def simple_plot(x_vec, y_vec, my_title, save_dir, save=False):
+
+    plt.figure()
+    plt.plot(x_vec, y_vec)
+    plt.title(my_title)
+    set_plot_position()
+    plt.show()
+
+    if save:
+        plt.savefig(save_dir+my_title+".png")
+
+def local_maxima_plot(new_x_vec, y_max_fourier, polynomial, mean_length, my_title, save_dir, save=False):
+
+    y_vec = y_max_fourier/mean_length
+    yfit = np.polyval(polynomial, new_x_vec)/mean_length
+
+    plt.figure()
+    plt.plot(new_x_vec, y_vec, label='Fourier Amplitudes')
+    plt.plot(new_x_vec, yfit, color='blue', label='Best Fit - FFT amplitudes')
+    plt.legend()
+    plt.title(my_title)
+    set_plot_position()
+    plt.show()
+
+
+
+
+    if save:
+        plt.savefig(save_dir+my_title+".png")

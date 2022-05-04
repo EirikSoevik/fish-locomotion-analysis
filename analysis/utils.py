@@ -3,7 +3,7 @@ import os
 from util.utils import find_centroid
 from scipy.interpolate import interp1d
 import analysis.plotting as aplt
-from scipy.fft import fft,fftfreq
+from scipy.fft import fft,fftfreq, ifft
 import matplotlib.pyplot as plt
 
 
@@ -15,14 +15,16 @@ def get_attributes(my_dir):
     i = 0
     dir_time_code = []
     for this_file in dir_files:
-        dir_time_code.append([this_file.partition("=")[2], i])
+        # This sorts the files into the correct time, i.e. from 0 to t_end. Make sure the sign below is the correcct for
+        # the naming nomenclature used in detectron2!
+        dir_time_code.append([this_file.partition("_")[2], i])
         i += 1
 
     dir_time_code.sort()
     dict_list = {}
 
-    for i in range(len(dir_time_code)):
-        time_code, element = dir_time_code[i]
+    for ii in range(len(dir_time_code)):
+        time_code, element = dir_time_code[ii]
 
         dict_list[dir_files[element]] = {}
         dict_list[dir_files[element]]["time_code"] = time_code
@@ -122,7 +124,7 @@ def axis_transformation(midlines_x, midlines_y, centroid, coords_x, coords_y):
 
     return midline_new_x, midline_new_y, new_centroid, new_coords_x, new_coords_y
 
-def compute_average_midline_length(midlines_x, midlines_y, plotting):
+def midline_statistics(midlines_x, midlines_y, plotting):
     """Approximates a mean midline length based on all midlines"""
     time, space = midlines_x.shape
     dl = np.zeros([time, space-1])
@@ -143,20 +145,13 @@ def compute_average_midline_length(midlines_x, midlines_y, plotting):
     std_length = np.std(l)
     mean_length = np.mean(l)
 
-    import matplotlib.pyplot as plt
-    if plotting:
-        plt.figure()
-        n, bins, patches = plt.hist(l)
-        plt.title("Mean length of midline")
-        aplt.set_plot_position()
-        plt.show()
 
     print("Property          | Mean    | Std. dev ")
     print("----------------------------------------")
     print("Midline length     {:3.2f}     {:1.2f}".format(mean_length,std_length))
     print("dL/dx               {:2.2f}     {:1.2f}".format(mean_dl_tot,std_dl_tot))
     print("----------------------------------------")
-    return mean_length, std_length
+    return mean_length, std_length, l
 
 def midline_spline(midlines_x, midlines_y, spline_length, interp_kind = 'cubic'):
 
@@ -166,7 +161,6 @@ def midline_spline(midlines_x, midlines_y, spline_length, interp_kind = 'cubic')
 
     for t in range(time):
         my_splines[t] = interp1d(midlines_x[t,:], midlines_y[t,:], kind=interp_kind, fill_value='extrapolate')
-
 
     return spline_x, my_splines
 
@@ -225,6 +219,7 @@ def fourier_analysis(midline_x, midline_y, std_length,T):
     f_y = fft(y_vec)
 
     f_y_abs = 2.0 / N * np.abs(f_y[0:N // 2])
+    print("plotting in fourier_analysis")
     aplt.fourier_plot(f_x,f_y,N)
 
     #aplt.fourier_animation(f_x,f_y,N)
@@ -233,7 +228,7 @@ def fourier_analysis(midline_x, midline_y, std_length,T):
 
     return f_x, f_y
 
-def fourier_analysis_all(midline_x, midline_y, T):
+def fourier_analysis_all(midline_x, midline_y, T, plotting):
     """ FFT of time history of each point
 
     Removes mean position from signal so it doesn't disturb the results
@@ -244,23 +239,55 @@ def fourier_analysis_all(midline_x, midline_y, T):
     N = time_dim # number of sample points
     f_x = fftfreq(N, T)[:N // 2]
     f_y = np.zeros([len(f_x), space_dim])
+    f_y_c = np.zeros([len(f_x), space_dim])
+    phase = np.zeros([len(f_x), space_dim])
 
     for s in range(space_dim):
-
         x_vec = midline_x[:, s]
         y_vec = midline_y[:, s]
 
         y_vec = y_vec - np.mean(y_vec)
-        f_y1 = fft(y_vec)
+        f_y1 = np.fft.rfft(y_vec)
         f_y[:,s] = 2.0 / N * np.abs(f_y1[0:N // 2])
+        f_y_c[:,s] = f_y1[0:N//2]
+        phase[:,s] = np.angle(f_y1[0:N//2])
 
-    aplt.fourier_plot(f_x, f_y, N)
 
-    aplt.fourier_animation(f_x,f_y,N)
+    return f_x, f_y, N, f_y_c
 
-    # aplt.fourier_plot(f_x,f_y,N)
 
-    return f_x, f_y
+def fft_inverse_frequency_filter(f_x, f_y):
+    """ Filters out higher frequencies in the frequency plane (after fourier analysis has been performed)
+
+    Note that the dominant frequency might be due to the fish moving and so the lowest peak might need to be subtracted
+    """
+
+    time_it, space = f_y.shape
+    #midlines_y_filtered = np.zeros([time_it, space])
+
+    f_dom = np.zeros([space])
+    max_y_it = np.zeros([space]).astype(int)
+    new_y_vec = {}
+    old_y = {}
+    max_y = np.zeros([space])
+
+    for s in range(space):
+        max_y[s] = f_y[:,s].max()
+        max_y_it[s] = f_y[:,s].argmax()
+        f_dom[s] = f_x[max_y_it[s]]
+
+
+        # filter out everything greater than 1.5 times dominant frequency
+        new_y_vec[s] = ifft(f_y[0:int(np.ceil(max_y_it[s]*1.5)),s])
+        old_y[s] = ifft(f_y[:,s])
+
+    if np.all(f_dom == f_dom[0]):
+        print("All midline points have dominant frequency in y-dir as " + str(f_dom[0]) + " Hz")
+    else:
+        for freq in f_dom:
+            print("Dominant frequency: " + str(freq))
+
+    return f_dom, new_y_vec, max_y
 
 def rfft_2D(midlines_x,midlines_y,  std_length):
     """Input: mirrored midlines"""
@@ -284,7 +311,7 @@ def rfft_2D(midlines_x,midlines_y,  std_length):
         # plt.plot(yf[t,:])
         # plt.show()
         # #time.sleep(1)
-
+    print("Plotting in rfft_2D")
     aplt.fft_plot(xf,yf)
 
     return xf, yf
@@ -343,3 +370,30 @@ def space_mirroring(midlines_x,midlines_y):
         # plt.show()
 
     return midlines_x_mirrored, midlines_y_mirrored
+
+def lateral_displacement(midlines_x, midlines_y,T):
+
+    time_dim, space = midlines_x.shape
+    y_displacement = np.zeros([space])
+
+    for s in range(space):
+
+        y_mean = np.mean(midlines_y[:,s])
+        y_displacement[s] = (np.abs(np.max(midlines_y[:,s]))-y_mean)/(np.max(midlines_x)-np.min(midlines_x))
+
+    return y_displacement
+
+def curve_fit_second_order(x_vec, y_vec, order=2, output_length=100):
+
+    #time_dim, space_dim = x_vec.shape
+    #xfit = {}
+    #yfit = {}
+
+    #for t in range(time_dim):
+    polynomial = np.polyfit(x_vec, y_vec, order)
+    print("Polynomial for approximating midline amplitudes is given by: " + str(polynomial))
+    xfit = np.linspace(min(x_vec), max(x_vec), output_length)
+    yfit = np.polyval(polynomial, xfit)
+
+    return xfit, yfit, polynomial
+
