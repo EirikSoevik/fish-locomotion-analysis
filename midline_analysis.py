@@ -36,8 +36,8 @@ def main():
     save_dir = "my_data/mask_output_april_Apr-27-2022_1618/"
     dir_files = os.listdir(my_dir)
 
-    save = False#True
-    plotting = True
+    save = False # plotting must also be true for save to work
+    plotting = False
     spline_length = 15
     T = 1 / 50  # sample spacing
 
@@ -49,10 +49,10 @@ def main():
 
 
     # Some computations, plotting
-    mean_length, std_length, l = autil.midline_statistics(midlines_x, midlines_y, plotting)
+    mean_length, std_length, l = autil.midline_statistics(midlines_x, midlines_y)
     new_midlines_x, new_midlines_y, new_centroid,\
     new_coords_x, new_coords_y = autil.axis_transformation(midlines_x, midlines_y, centroid, coords_x, coords_y)
-    new_mean_length, new_std_length, new_l = autil.midline_statistics(new_midlines_x, new_midlines_y, plotting) # plots
+    new_mean_length, new_std_length, new_l = autil.midline_statistics(new_midlines_x, new_midlines_y) # plots
 
     # Spline
     spline_x, my_splines = autil.midline_spline(new_midlines_x,new_midlines_y,spline_length,interp_kind='linear')
@@ -61,30 +61,51 @@ def main():
 
 
     #       Choose only a few swimming periods, for example 5 periods:
-    start_frame = 0
-    end_frame = 79
+    start_frame = 3
+    end_frame = 83
+
+    if plotting:
+        aplt.frame_output(coords_x, coords_y, midlines_x, midlines_y, centroid, frame=start_frame, my_title="Starting pos. for analysis")
+        aplt.frame_output(coords_x, coords_y, midlines_x, midlines_y, centroid, frame=end_frame,
+                          my_title="End pos. for analysis")
+
     midlines_x = midlines_x[start_frame:end_frame,:]
     midlines_y = midlines_y[start_frame:end_frame,:]
     centroid = centroid[start_frame:end_frame]
 
+    if plotting:
+        aplt.all_midlines_in_one(midlines_x, midlines_y, save_dir=save_dir, my_title="all midlines transverse",
+                                 longitudinal_lines=False, save=save)
+        aplt.all_midlines_in_one(midlines_x, midlines_y, save_dir=save_dir, my_title="all midlines transverse",
+                                 longitudinal_lines=True, save=save)
+        aplt.body_midline_centroid_animation(coords_x[start_frame:end_frame,:],coords_y[start_frame:end_frame,:],midlines_x,midlines_y,centroid)
     #       To verify
     #aplt.point_in_time(midlines_y, "midline_y end", save_dir=save_dir, pos=-1, save=False)
 
-    f_x, f_y, N, f_y_c = autil.fourier_analysis_all(midlines_x,midlines_y, T, plotting)
-    f_dom, new_y_vec, y_max_fourier = autil.fft_inverse_frequency_filter(f_x, f_y)
+    f_x, f_y, N, f_y_total, phase = autil.fourier_analysis_all(midlines_x,midlines_y, T, plotting)
+    f_dom, filtered_midlines_y, y_max_fourier = autil.fft_analysis(f_x, f_y_total, midlines_y, plotting)
+
+    #aplt.body_midline_centroid_animation(coords_x[start_frame:end_frame, :], coords_y[start_frame:end_frame, :],
+    #                                     midlines_x, filtered_midlines_y, centroid)
+
+
+    autil.phase_analytics(phase)
+    if plotting:
+        aplt.phase_animation(phase)
+
     xfit, yfit, polynomial = autil.curve_fit_second_order(x_vec=new_midlines_x[0,:],y_vec=y_max_fourier,order=2,output_length=100)
 
     #p_it, sample_match_x, sample_match_y = autil.find_position(midlines_x=midlines_x,midlines_y=midlines_y, sample_iteration=0,tol=0.1)
     y_displacement_time = autil.lateral_displacement(midlines_x,midlines_y,T)
     #y_displacement_fourier = autil.fourier_lateral_displacement(f_y, f_dom_arg)
 
-    if plotting == True:
+    if plotting:
         #aplt.histogram(l, "midline length", save_dir, save=False)
         #aplt.histogram(new_l, "new midline length", save_dir, save=False)
 
         #aplt.point_in_time(midlines_y, "midline_y end", save_dir=save_dir, pos=-1, save=save)
         #aplt.point_in_time(midlines_x, "midline_x end", save_dir=save_dir, pos=-1, save=save)
-        #aplt.point_in_time(midlines_y, "midline_y start", save_dir=save_dir, pos=0, save=save)
+        aplt.point_in_time(midlines_y, "midline_y mid", save_dir=save_dir, pos=10, save=save)
         #aplt.point_in_time(midlines_x, "midline_x start", save_dir=save_dir, pos=0, save=save)
         #aplt.point_in_time(centroid, "centroid_y", save_dir=save_dir, pos=-1, save=save)
         #aplt.point_in_time(centroid, "centroid_x", save_dir=save_dir, pos= 0, save=save)
@@ -100,6 +121,11 @@ def main():
         aplt.local_maxima_plot(new_midlines_x[0,:],y_max_fourier, polynomial, mean_length, my_title="Midline y maxima in BL",save_dir=save_dir,save=save)
         #aplt.fourier_animation(f_x,f_y,N)
 
+
+    save=True
+    if save:
+        from scipy.io import savemat
+        savemat(save_dir+'midlines_y.mat', {'my_data': midlines_y})
     print("Finished main")
 
 

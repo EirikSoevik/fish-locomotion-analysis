@@ -8,9 +8,10 @@ import matplotlib.animation as FuncAnimation
 
 """ Plots available:
 
+    - frame_output(coords_x, coords_y, midline_x, midline_y, centroid, frame)
     - midline_animation(x,y)
     - midline_animation_centroid(x, y,centroid)
-    - body_midline_centroid(coords_x, coords_y, midlines_x, midlines_y, centroid)
+    - body_midline_centroid_animation(coords_x, coords_y, midlines_x, midlines_y, centroid)
     - spline_plotting(my_splines,spline_x,coords_x, coords_y, midlines_x, midlines_y, centroid)
     - all_splines_plot(spline_x, my_splines, my_title, save_dir, save=False)
     - fourier_plot(f_x,f_y,N, my_title, save_dir, save=False)
@@ -30,6 +31,18 @@ def set_plot_position(x=3100,y=100,dx=2000,dy=900):
     mngr = plt.get_current_fig_manager()
     # to put it into the upper left corner for example:
     mngr.window.setGeometry(x,y,dx,dy)
+
+def frame_output(coords_x, coords_y, midline_x, midline_y, centroid, frame, my_title):
+
+    figure, ax = plt.subplots(figsize=(10, 8))
+
+    plt.plot(coords_x[frame,:],coords_y[frame,:], midline_x[frame,:],midline_y[frame,:],centroid[frame,0], centroid[frame,1])
+    #plt.legend("coords", "midline", "centroid")
+    ax.set_aspect('equal',adjustable='datalim')
+    plt.title(my_title)
+    plt.xlabel("x-axis")
+    plt.ylabel("y-axis")
+
 
 def midline_animation(x, y):
 
@@ -56,6 +69,7 @@ def midline_animation(x, y):
         figure.canvas.flush_events()
 
         time.sleep(0.1)
+
 
 def midline_animation_centroid(x, y,centroid):
 
@@ -87,7 +101,8 @@ def midline_animation_centroid(x, y,centroid):
 
         time.sleep(0.1)
 
-def body_midline_centroid(coords_x, coords_y, midlines_x, midlines_y, centroid):
+
+def body_midline_centroid_animation(coords_x, coords_y, midlines_x, midlines_y, centroid):
 
 
     rows, col = midlines_x.shape
@@ -106,6 +121,7 @@ def body_midline_centroid(coords_x, coords_y, midlines_x, midlines_y, centroid):
     plt.ylabel("y-axis")
     set_plot_position()
 
+
     for i in range(1,rows):
 
         line1.set_xdata(midlines_x[i,:])
@@ -121,8 +137,8 @@ def body_midline_centroid(coords_x, coords_y, midlines_x, midlines_y, centroid):
 
         time.sleep(0.1)
 
-def spline_plotting(my_splines,spline_x,coords_x, coords_y, midlines_x, midlines_y, centroid):
 
+def spline_plotting(my_splines,spline_x,coords_x, coords_y, midlines_x, midlines_y, centroid):
 
     rows, col = midlines_x.shape
     #fig = plt.figure()
@@ -159,6 +175,7 @@ def spline_plotting(my_splines,spline_x,coords_x, coords_y, midlines_x, midlines
         time.sleep(0.1)
 
     figure.canvas.flush_events()
+
 
 def all_splines_plot(spline_x, my_splines, my_title, save_dir, save=False):
 
@@ -214,6 +231,7 @@ def fourier_animation(f_x, f_y,N):
 
     figure.canvas.flush_events()
 
+
 def fft_plot(fx, fy):
 
     ftime, N = fy.shape
@@ -244,6 +262,7 @@ def fft_plot(fx, fy):
 
     figure.canvas.flush_events()
 
+
 def point_in_time(my_array, my_title, save_dir, pos=-1,save=False):
     """Plot a single midline point in time to evaluate swimming period"""
 
@@ -267,6 +286,7 @@ def all_point_in_time(my_array, my_title, save_dir,save=False):
     plt.show()
     if save:
         plt.savefig(save_dir+my_title+".png")
+
 
 def midlines_centroid_in_time(midline_x, midline_y,centroid, my_title, save_dir, save=False):
 
@@ -310,6 +330,7 @@ def histogram(l, my_title, save_dir, save=False):
     if save:
         plt.savefig(save_dir+my_title+".png")
 
+
 def simple_plot(x_vec, y_vec, my_title, save_dir, save=False):
 
     plt.figure()
@@ -320,6 +341,7 @@ def simple_plot(x_vec, y_vec, my_title, save_dir, save=False):
 
     if save:
         plt.savefig(save_dir+my_title+".png")
+
 
 def local_maxima_plot(new_x_vec, y_max_fourier, polynomial, mean_length, my_title, save_dir, save=False):
 
@@ -334,8 +356,54 @@ def local_maxima_plot(new_x_vec, y_max_fourier, polynomial, mean_length, my_titl
     set_plot_position()
     plt.show()
 
+    if save:
+        plt.savefig(save_dir+my_title+".png")
 
 
+def all_midlines_in_one(midlines_x, midlines_y, save_dir, my_title, longitudinal_lines=False,  save=False):
+
+    if longitudinal_lines==False:
+        plt.figure()
+        plt.plot(midlines_x,midlines_y)
+        plt.title("All midlines")
+        plt.show()
+    if longitudinal_lines==True:
+        time_dim, space_dim = midlines_x.shape
+
+        plt.figure()
+        for t in range(time_dim):
+            plt.plot(midlines_x[t,:],midlines_y[t,:])
+        plt.title("All midlines")
+        plt.show()
 
     if save:
         plt.savefig(save_dir+my_title+".png")
+
+def phase_animation(phase):
+
+    time_dim, space_dim = phase.shape
+
+    plt.ion()
+    figure, ax = plt.subplots(figsize=(10, 8))
+    #line1, = ax.plot(fx[0,:],fy[0,:])
+    line1, = ax.plot(phase[:,0])
+
+    ax.set_aspect('equal',adjustable='datalim')
+    plt.title("Phase of midlines points for frame: 0" )
+    plt.xlabel("X-pos")
+    plt.ylabel("Phase")
+    set_plot_position()
+
+    for i in range(1,space_dim):
+        line1.set_ydata(phase[:,i])
+        figure.canvas.draw()
+        plt.title("Phase of midlines points for frame: " + str(i))
+        figure.canvas.flush_events()
+
+        time.sleep(0.1)
+
+    figure.canvas.flush_events()
+
+    for i in range(0,space_dim):
+        plt.plot(phase[:,i])
+    plt.show()

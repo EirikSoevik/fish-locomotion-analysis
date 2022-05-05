@@ -124,7 +124,7 @@ def axis_transformation(midlines_x, midlines_y, centroid, coords_x, coords_y):
 
     return midline_new_x, midline_new_y, new_centroid, new_coords_x, new_coords_y
 
-def midline_statistics(midlines_x, midlines_y, plotting):
+def midline_statistics(midlines_x, midlines_y):
     """Approximates a mean midline length based on all midlines"""
     time, space = midlines_x.shape
     dl = np.zeros([time, space-1])
@@ -238,56 +238,125 @@ def fourier_analysis_all(midline_x, midline_y, T, plotting):
     time_dim, space_dim = midline_x.shape
     N = time_dim # number of sample points
     f_x = fftfreq(N, T)[:N // 2]
-    f_y = np.zeros([len(f_x), space_dim])
+    f_x1 = fftfreq(N, T)
+    f_y = np.zeros([len(f_x1), space_dim])
+    #f_y_total = np.zeros([len(f_x1), space_dim])
+    f_y_total = np.empty([len(f_x1), space_dim]).astype(complex)
+
+    f_y2 = np.zeros([len(f_x), space_dim])
     f_y_c = np.zeros([len(f_x), space_dim])
     phase = np.zeros([len(f_x), space_dim])
+    a = np.zeros([time_dim, space_dim])
 
     for s in range(space_dim):
-        x_vec = midline_x[:, s]
         y_vec = midline_y[:, s]
 
-        y_vec = y_vec - np.mean(y_vec)
-        f_y1 = np.fft.rfft(y_vec)
-        f_y[:,s] = 2.0 / N * np.abs(f_y1[0:N // 2])
-        f_y_c[:,s] = f_y1[0:N//2]
-        phase[:,s] = np.angle(f_y1[0:N//2])
+        y_vec = y_vec# - np.mean(y_vec)
+        f_y_total[:,s] = np.fft.fft(y_vec)
+
+        f_y[:,s] = 2.0 / N * np.abs(f_y_total[:,s])
+        #f_y_c[:,s] = f_y1[0:N//2]
+        phase[:,s] = np.angle(f_y_total[0:N//2, s])
 
 
-    return f_x, f_y, N, f_y_c
+    return f_x1, f_y, N, f_y_total, phase
 
+def phase_analytics(phase):
+    #TODO: finish this
 
-def fft_inverse_frequency_filter(f_x, f_y):
-    """ Filters out higher frequencies in the frequency plane (after fourier analysis has been performed)
+    import time
+    time_dim, space_dim = phase.shape
+
+    print("Running Phase analytics")
+
+    plt.figure()
+    for t in range(time_dim):
+        #wait = input("Continue? Enter anything:")
+
+        plt.plot(phase[t,:])
+        plt.title("Phase for timeframe " + str(t))
+        plt.show()
+        time.sleep(0.1)
+
+    plt.figure()
+    for s in range(space_dim):
+        # wait = input("Continue? Enter anything:")
+
+        plt.plot(phase[:, s])
+        plt.title("Phase for midline point " + str(s))
+        plt.show()
+        time.sleep(0.1)
+
+    print("")
+
+def wave_number():
+
+    #TODO: finish this
+    print()
+
+def fft_analysis(f_x, f_y_total, midlines_y, plotting):
+    """ Analysis of fft signal, finds dominating freq., wave number, etc.
 
     Note that the dominant frequency might be due to the fish moving and so the lowest peak might need to be subtracted
     """
 
-    time_it, space = f_y.shape
+    time_it, space = f_y_total.shape
     #midlines_y_filtered = np.zeros([time_it, space])
 
+    m_time, m_space = midlines_y.shape
     f_dom = np.zeros([space])
-    max_y_it = np.zeros([space]).astype(int)
-    new_y_vec = {}
-    old_y = {}
+    max_y_ind = np.zeros([space]).astype(int)
+    filtered_midlines_y = np.zeros([m_time, m_space])
+    #filtered_midlines_y1 = {}
+    old_y = np.zeros([m_time, m_space])
     max_y = np.zeros([space])
+    T_dom = np.zeros([space])
 
+    nfy_time, nfy_space = f_y_total.shape
+    new_f_y = np.empty([nfy_time, nfy_space]).astype(complex)
+    new_vec = np.empty([nfy_time//2]).astype(complex)
+
+    scale_factor = 5
     for s in range(space):
-        max_y[s] = f_y[:,s].max()
-        max_y_it[s] = f_y[:,s].argmax()
-        f_dom[s] = f_x[max_y_it[s]]
 
+        f_y = np.abs(f_y_total[1:len(f_y_total)//2, s])
 
-        # filter out everything greater than 1.5 times dominant frequency
-        new_y_vec[s] = ifft(f_y[0:int(np.ceil(max_y_it[s]*1.5)),s])
-        old_y[s] = ifft(f_y[:,s])
+        # Dominating frequency
+        max_y[s] = f_y.max()
+        max_y_ind[s] = f_y.argmax()+1
+        f_dom[s] = f_x[max_y_ind[s]]
+        T_dom[s] = 1/f_dom[s]
+
+        new_vec[0:int(np.ceil(max_y_ind[s])*scale_factor)] = f_y_total[0:int(np.ceil(max_y_ind[s])*scale_factor), s]
+
+        #new_fy = np.concatenate(new_vec,f_y_total[nfy_time//2+1, s],new_vec[-1:0:-1])
+        new_fy = np.append(new_vec, f_y_total[nfy_time//2+1, s])
+        new_fy = np.append(new_fy,new_vec[-1:0:-1])
+
+        filtered_midlines_y[:, s] = ifft(new_fy)
+        old_y[:,s] = ifft(f_y_total[:, s])
+
 
     if np.all(f_dom == f_dom[0]):
         print("All midline points have dominant frequency in y-dir as " + str(f_dom[0]) + " Hz")
+        print("Index is : " + str(max_y_ind[0]))
     else:
         for freq in f_dom:
             print("Dominant frequency: " + str(freq))
 
-    return f_dom, new_y_vec, max_y
+    import time
+
+    if plotting:
+        for s in range(m_space):
+            plt.figure()
+            plt.plot(old_y[:,s], 'b-')
+            plt.plot(filtered_midlines_y[:,s],'b--')
+            plt.plot(midlines_y[:,s],'r*')
+            plt.title("Midline pos: " + str(s) + " scale_factor = " + str(scale_factor))
+
+            #time.sleep(1)
+            plt.show()
+    return f_dom, filtered_midlines_y, max_y
 
 def rfft_2D(midlines_x,midlines_y,  std_length):
     """Input: mirrored midlines"""
