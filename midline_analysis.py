@@ -83,21 +83,25 @@ def main():
     #aplt.point_in_time(midlines_y, "midline_y end", save_dir=save_dir, pos=-1, save=False)
 
     f_x, f_y, N, f_y_total, phase = autil.fourier_analysis_all(midlines_x,midlines_y, T, plotting)
-    f_dom, filtered_midlines_y, y_max_fourier = autil.fft_analysis(f_x, f_y_total, midlines_y, plotting)
+    f_dom, filtered_midlines_y, y_max_f = autil.fft_analysis(f_x, f_y_total, midlines_y, plotting)
 
     #aplt.body_midline_centroid_animation(coords_x[start_frame:end_frame, :], coords_y[start_frame:end_frame, :],
     #                                     midlines_x, filtered_midlines_y, centroid)
 
 
-    autil.phase_analytics(phase)
+    #autil.phase_analytics(phase)
     if plotting:
         aplt.phase_animation(phase)
 
-    xfit, yfit, polynomial = autil.curve_fit_second_order(x_vec=new_midlines_x[0,:],y_vec=y_max_fourier,order=2,output_length=100)
 
     #p_it, sample_match_x, sample_match_y = autil.find_position(midlines_x=midlines_x,midlines_y=midlines_y, sample_iteration=0,tol=0.1)
-    y_displacement_time = autil.lateral_displacement(midlines_x,midlines_y,T)
+    y_max_t = autil.lateral_displacement(mean_length,midlines_y)
     #y_displacement_fourier = autil.fourier_lateral_displacement(f_y, f_dom_arg)
+
+    xfit_f, yfit_f, polynomial_f = autil.curve_fit_second_order(x_vec=new_midlines_x[0, :], y_vec=y_max_f,
+                                                          body_length=mean_length, order=2, output_length=20)
+    xfit_t, yfit_t, polynomial_t = autil.curve_fit_second_order(x_vec=new_midlines_x[0, :], y_vec=y_max_t,
+                                                          body_length=mean_length, order=2, output_length=20)
 
     if plotting:
         #aplt.histogram(l, "midline length", save_dir, save=False)
@@ -118,11 +122,12 @@ def main():
 
         #aplt.all_splines_plot(spline_x, my_splines, "all_splines", save_dir=save_dir, save=save)
         aplt.fourier_plot(f_x, f_y, N, "fourier_plot", save_dir=save_dir, save=save)
-        aplt.local_maxima_plot(new_midlines_x[0,:],y_max_fourier, polynomial, mean_length, my_title="Midline y maxima in BL",save_dir=save_dir,save=save)
+
+    aplt.local_maxima_plot(xfit_t, yfit_t, yfit_f, y_max_f, y_max_t, polynomial_t, polynomial_f, save_dir, save)
         #aplt.fourier_animation(f_x,f_y,N)
 
 
-    save=True
+    #save=True
     if save:
         from scipy.io import savemat
         savemat(save_dir+'midlines_y.mat', {'my_data': midlines_y})
