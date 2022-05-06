@@ -7,7 +7,6 @@ from scipy.fft import fft,fftfreq, ifft
 import matplotlib.pyplot as plt
 
 
-
 def get_attributes(my_dir):
     """Creates a time-sorted dictionary with all information, which can then be looped to access specifics"""
 
@@ -203,31 +202,6 @@ def axis_transformation2(midlines_x, midlines_y, centroid, coords_x, coords_y, s
 
     return midline_new_x, midline_new_y, new_centroid, new_coords_x, new_coords_y
 
-
-def fourier_analysis(midline_x, midline_y, std_length,T):
-
-    x_vec = midline_x[:,-1]
-    y_vec = midline_y[:,-1]
-
-    N = len(x_vec) # number of sample points
-
-    #T = 1/50 # sample spacing
-
-    y_vec = y_vec - np.mean(y_vec)
-
-    f_x = fftfreq(N,T)[:N//2]
-    f_y = fft(y_vec)
-
-    f_y_abs = 2.0 / N * np.abs(f_y[0:N // 2])
-    print("plotting in fourier_analysis")
-    aplt.fourier_plot(f_x,f_y,N)
-
-    #aplt.fourier_animation(f_x,f_y,N)
-
-    #aplt.fourier_plot(f_x,f_y,N)
-
-    return f_x, f_y
-
 def fourier_analysis_all(midline_x, midline_y, T, plotting):
     """ FFT of time history of each point
 
@@ -299,6 +273,7 @@ def fft_analysis(f_x, f_y_total, midlines_y, plotting):
 
     Note that the dominant frequency might be due to the fish moving and so the lowest peak might need to be subtracted
     """
+    wait = 1 #plotting animation
 
     time_it, space = f_y_total.shape
     #midlines_y_filtered = np.zeros([time_it, space])
@@ -314,9 +289,14 @@ def fft_analysis(f_x, f_y_total, midlines_y, plotting):
 
     nfy_time, nfy_space = f_y_total.shape
     new_f_y = np.empty([nfy_time, nfy_space]).astype(complex)
+    #new_f_y = np.zeros([nfy_time, nfy_space], dtype='complex')
     new_vec = np.empty([nfy_time//2]).astype(complex)
+    new_f_y = new_f_y*0
+    new_vec = new_vec*0
 
-    scale_factor = 5
+    scale_factor = 1.5
+    high_pass = 0#2
+
     for s in range(space):
 
         f_y = np.abs(f_y_total[1:len(f_y_total)//2, s])
@@ -327,10 +307,14 @@ def fft_analysis(f_x, f_y_total, midlines_y, plotting):
         f_dom[s] = f_x[max_y_ind[s]]
         T_dom[s] = 1/f_dom[s]
 
-        new_vec[0:int(np.ceil(max_y_ind[s])*scale_factor)] = f_y_total[0:int(np.ceil(max_y_ind[s])*scale_factor), s]
+        new_vec[high_pass:int(np.ceil(max_y_ind[s])*scale_factor)] = f_y_total[high_pass:int(np.ceil(max_y_ind[s])*scale_factor), s]
+
+        new_vec[1:5] = 0
+        new_vec[6:-1] = 0
 
         #new_fy = np.concatenate(new_vec,f_y_total[nfy_time//2+1, s],new_vec[-1:0:-1])
-        new_fy = np.append(new_vec, f_y_total[nfy_time//2+1, s])
+        new_fy = np.append(new_vec, f_y_total[nfy_time//2, s])
+        new_fy[nfy_time//2] = 0
         new_fy = np.append(new_fy,new_vec[-1:0:-1])
 
         filtered_midlines_y[:, s] = ifft(new_fy)
@@ -345,118 +329,28 @@ def fft_analysis(f_x, f_y_total, midlines_y, plotting):
             print("Dominant frequency: " + str(freq))
 
     import time
-
+    #plotting=True
     if plotting:
-        for s in range(m_space):
-            plt.figure()
-            plt.plot(old_y[:,s], 'b-')
-            plt.plot(filtered_midlines_y[:,s],'b--')
-            plt.plot(midlines_y[:,s],'r*')
-            plt.title("Midline pos: " + str(s) + " scale_factor = " + str(scale_factor))
-
-            #time.sleep(1)
-            plt.show()
+        aplt.fft_evaluation(old_y,midlines_y,filtered_midlines_y,scale_factor, wait)
+    plotting=False
     return f_dom, filtered_midlines_y, max_y
 
-def rfft_2D(midlines_x,midlines_y,  std_length):
-    """Input: mirrored midlines"""
-    from scipy.fft import rfft2
-    import matplotlib.cm as cm
 
-    #f, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2,3, sharex='col', sharey='row')
-    #xf = np.zeros((N,N))
-    #xf = np.zeros((N,N))
+def lateral_displacement(mean_length, midlines_y):
 
-    time, space = midlines_x.shape
-
-    xf = np.zeros([time,space//2])
-    yf = np.zeros([time,space])
-
-    for t in range(time):
-        yf[t,:] = fft(midlines_y[t, :])
-        xf[t,:] = fftfreq(space, std_length)[:space//2]
-
-        # plt.figure()
-        # plt.plot(yf[t,:])
-        # plt.show()
-        # #time.sleep(1)
-    print("Plotting in rfft_2D")
-    aplt.fft_plot(xf,yf)
-
-    return xf, yf
-
-def approximate_steering():
-    """Find y_1(x) = C(x²+gamma*x+beta)"""
-
-def find_position(midlines_x, midlines_y, sample_iteration=0, tol=0.1):
-    """Finds the same body position in time so that one period can be analysed"""
-
-    time, space = midlines_x.shape
-
-    sample_1 = np.vstack((midlines_x[sample_iteration,:], midlines_y[sample_iteration,:])).T
-    sample_x = midlines_x[sample_iteration,:]
-    sample_y = midlines_y[sample_iteration,:]
-    p_it = -1
-
-    for t in range(sample_iteration+1,time):
-            #x_diff = sum(midlines_x[t,:]-sample_x)
-            y_diff = sum(midlines_y[t,:]-sample_y)
-            if y_diff<tol:
-                p_it = t
-                sample_match_x = midlines_x[t,:]
-                sample_match_y = midlines_y[t,:]
-
-    if p_it < 0:
-        raise Exception("Could not find matching position in time")
-
-    print("Start it: " + str(sample_iteration) + "end it: " + str(p_it))
-    return p_it, sample_match_x, sample_match_y
-
-def space_mirroring(midlines_x,midlines_y):
-    """Mirrors midlines in the x-direction to be able to utilize fourier analysis"""
-    time, space = midlines_x.shape
-
-    midlines_x_mirrored = np.zeros([time, space*2])
-    midlines_y_mirrored = np.zeros([time, space*2])
-
-    for t in range(time):
-        midlines_x_mirrored[t,0:space] = -np.flip(midlines_x[t,:])
-        midlines_x_mirrored[t,space:2*space] = midlines_x[t,:]
-
-        midlines_y_mirrored[t,0:space] = np.flip(midlines_y[t,:])
-        midlines_y_mirrored[t,space:2*space] = midlines_y[t,:]
-
-        # for s in range(space-1,-1,-1):
-        #     midlines_x_mirrored[t, s] = -midlines_x[t, s]
-        #     midlines_y_mirrored[t, s] = midlines_y[t, s]
-        #
-        # for s in range(space-1):
-        #     midlines_x_mirrored[t, s] = midlines_x[t, s + space]
-        #     midlines_y_mirrored[t, s] = midlines_y[t, s + space]
-
-        # plt.figure()
-        # plt.plot(midlines_x_mirrored[t,:],midlines_y_mirrored[t,:])
-        # plt.show()
-
-    return midlines_x_mirrored, midlines_y_mirrored
-
-def lateral_displacement(midlines_x, midlines_y,T):
-
-    time_dim, space = midlines_x.shape
+    time_dim, space = midlines_y.shape
     y_displacement = np.zeros([space])
 
     for s in range(space):
 
         y_mean = np.mean(midlines_y[:,s])
-        y_displacement[s] = (np.abs(np.max(midlines_y[:,s]))-y_mean)/(np.max(midlines_x)-np.min(midlines_x))
+        y_displacement[s] = (np.abs(np.max(midlines_y[:,s]))-y_mean)/mean_length
 
     return y_displacement
 
-def curve_fit_second_order(x_vec, y_vec, order=2, output_length=100):
+def curve_fit_second_order(x_vec, y_vec, body_length, order=2, output_length=100):
+    """Curve fitting of a second degree equation, here  the amplitudes of each point along the midline"""
 
-    #time_dim, space_dim = x_vec.shape
-    #xfit = {}
-    #yfit = {}
 
     #for t in range(time_dim):
     polynomial = np.polyfit(x_vec, y_vec, order)

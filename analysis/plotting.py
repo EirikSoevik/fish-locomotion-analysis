@@ -112,7 +112,7 @@ def body_midline_centroid_animation(coords_x, coords_y, midlines_x, midlines_y, 
 
     plt.ion()
     figure, ax = plt.subplots(figsize=(10, 8))
-    line1, = ax.plot(midlines_x[0,:],midlines_y[0,:])
+    line1, = ax.plot(midlines_x[0,:],midlines_y[0,:], 'r*')
     line2, = ax.plot(centroid[0,0], centroid[0,1],'ro')
     line3, = ax.plot(coords_x[0,:], coords_y[0,:])
     ax.set_aspect('equal',adjustable='datalim')
@@ -343,21 +343,25 @@ def simple_plot(x_vec, y_vec, my_title, save_dir, save=False):
         plt.savefig(save_dir+my_title+".png")
 
 
-def local_maxima_plot(new_x_vec, y_max_fourier, polynomial, mean_length, my_title, save_dir, save=False):
+def local_maxima_plot(xfit, yfit_t, yfit_f, y_max_f, y_max_t, polynomial_t, polynomial_f, save_dir, save=False):
 
-    y_vec = y_max_fourier/mean_length
-    yfit = np.polyval(polynomial, new_x_vec)/mean_length
+
 
     plt.figure()
-    plt.plot(new_x_vec, y_vec, label='Fourier Amplitudes')
-    plt.plot(new_x_vec, yfit, color='blue', label='Best Fit - FFT amplitudes')
+    plt.plot(xfit, yfit_t, '-', label='Curve fit from time')
+    plt.plot(xfit, yfit_f, '--', color='blue', label='Curve fit from fft')
+    plt.plot(xfit, y_max_t, 'ro', label='Amplitude avgeraged over time')
+    plt.plot(xfit, y_max_f, 'rv', label='Amplitudes from fft analysis')
+
+    plt.xlabel("Position along bodylength")
+    plt.ylabel("Lateral displacement / bodylength")
     plt.legend()
-    plt.title(my_title)
+    plt.title("Average displacement amplitude along midline")
     set_plot_position()
     plt.show()
 
     if save:
-        plt.savefig(save_dir+my_title+".png")
+        plt.savefig(save_dir+"avg_displacement_prBL"+".png")
 
 
 def all_midlines_in_one(midlines_x, midlines_y, save_dir, my_title, longitudinal_lines=False,  save=False):
@@ -407,3 +411,36 @@ def phase_animation(phase):
     for i in range(0,space_dim):
         plt.plot(phase[:,i])
     plt.show()
+
+def fft_evaluation(old_y, midlines_y, filtered_y, scale_factor, wait=0.2):
+
+    m_time, m_space = midlines_y.shape
+
+    ymin = min(np.min(old_y), np.min(midlines_y), np.min(filtered_y))
+    ymax = max(np.max(old_y), np.max(midlines_y), np.max(filtered_y))
+
+    plt.ion()
+    figure, ax = plt.subplots(figsize=(10, 8))
+    ax.set_ylim([ymin*0.95, ymax*1.05])
+    #ax.set_aspect('equal', adjustable='datalim') #datalim
+
+    plt.title("Midline and fourier approx. for pos: " + str(0) + " scale factor: " + str(scale_factor))
+    plt.xlabel("time")
+    plt.ylabel("y-axis")
+
+    line1, = ax.plot(old_y[:,0], 'b''')
+    line2, = ax.plot(filtered_y[:,0], 'b--')
+    line3, = ax.plot(midlines_y[:,0], 'r*')
+
+    for s in range(1, m_space):
+
+        line1.set_ydata(old_y[:, s])
+        line2.set_ydata(filtered_y[:, s])
+        line3.set_ydata(midlines_y[:, s])
+        plt.title("Midline and fourier approx. for frame: " + str(s) + " scale factor: " + str(scale_factor))
+        figure.canvas.draw()
+        figure.canvas.flush_events()
+
+        time.sleep(wait)
+
+    figure.canvas.flush_events()
