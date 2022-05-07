@@ -89,11 +89,6 @@ def main():
     #                                     midlines_x, filtered_midlines_y, centroid)
 
 
-    #autil.phase_analytics(phase)
-    if plotting:
-        aplt.phase_animation(phase)
-
-
     #p_it, sample_match_x, sample_match_y = autil.find_position(midlines_x=midlines_x,midlines_y=midlines_y, sample_iteration=0,tol=0.1)
     y_max_t = autil.lateral_displacement(mean_length,midlines_y)
     #y_displacement_fourier = autil.fourier_lateral_displacement(f_y, f_dom_arg)
@@ -123,7 +118,7 @@ def main():
         #aplt.all_splines_plot(spline_x, my_splines, "all_splines", save_dir=save_dir, save=save)
         aplt.fourier_plot(f_x, f_y, N, "fourier_plot", save_dir=save_dir, save=save)
 
-    aplt.local_maxima_plot(xfit_t, yfit_t, yfit_f, y_max_f, y_max_t, polynomial_t, polynomial_f, save_dir, save)
+        aplt.local_maxima_plot(xfit_t, yfit_t, yfit_f, y_max_f, y_max_t, polynomial_t, polynomial_f, save_dir, save)
         #aplt.fourier_animation(f_x,f_y,N)
 
 

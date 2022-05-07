@@ -225,7 +225,7 @@ def fourier_analysis_all(midline_x, midline_y, T, plotting):
     for s in range(space_dim):
         y_vec = midline_y[:, s]
 
-        y_vec = y_vec# - np.mean(y_vec)
+        #y_vec = y_vec - np.mean(y_vec)
         f_y_total[:,s] = np.fft.fft(y_vec)
 
         f_y[:,s] = 2.0 / N * np.abs(f_y_total[:,s])
@@ -234,34 +234,6 @@ def fourier_analysis_all(midline_x, midline_y, T, plotting):
 
 
     return f_x1, f_y, N, f_y_total, phase
-
-def phase_analytics(phase):
-    #TODO: finish this
-
-    import time
-    time_dim, space_dim = phase.shape
-
-    print("Running Phase analytics")
-
-    plt.figure()
-    for t in range(time_dim):
-        #wait = input("Continue? Enter anything:")
-
-        plt.plot(phase[t,:])
-        plt.title("Phase for timeframe " + str(t))
-        plt.show()
-        time.sleep(0.1)
-
-    plt.figure()
-    for s in range(space_dim):
-        # wait = input("Continue? Enter anything:")
-
-        plt.plot(phase[:, s])
-        plt.title("Phase for midline point " + str(s))
-        plt.show()
-        time.sleep(0.1)
-
-    print("")
 
 def wave_number():
 
@@ -296,9 +268,10 @@ def fft_analysis(f_x, f_y_total, midlines_y, plotting):
 
     scale_factor = 1.5
     high_pass = 0#2
+    low_pass = 6
 
     for s in range(space):
-
+        new_vec = new_vec * 0
         f_y = np.abs(f_y_total[1:len(f_y_total)//2, s])
 
         # Dominating frequency
@@ -306,16 +279,20 @@ def fft_analysis(f_x, f_y_total, midlines_y, plotting):
         max_y_ind[s] = f_y.argmax()+1
         f_dom[s] = f_x[max_y_ind[s]]
         T_dom[s] = 1/f_dom[s]
+        phase_dom[s] = phase[]
 
         new_vec[high_pass:int(np.ceil(max_y_ind[s])*scale_factor)] = f_y_total[high_pass:int(np.ceil(max_y_ind[s])*scale_factor), s]
 
-        new_vec[1:5] = 0
-        new_vec[6:-1] = 0
+        new_vec[high_pass+1:max_y_ind[s]] = 0
+        new_vec[low_pass:-1] = 0
 
         #new_fy = np.concatenate(new_vec,f_y_total[nfy_time//2+1, s],new_vec[-1:0:-1])
         new_fy = np.append(new_vec, f_y_total[nfy_time//2, s])
         new_fy[nfy_time//2] = 0
         new_fy = np.append(new_fy,new_vec[-1:0:-1])
+
+        plt.plot(new_fy)
+        plt.show()
 
         filtered_midlines_y[:, s] = ifft(new_fy)
         old_y[:,s] = ifft(f_y_total[:, s])
@@ -329,10 +306,13 @@ def fft_analysis(f_x, f_y_total, midlines_y, plotting):
             print("Dominant frequency: " + str(freq))
 
     import time
-    #plotting=True
+    plotting=True
     if plotting:
         aplt.fft_evaluation(old_y,midlines_y,filtered_midlines_y,scale_factor, wait)
     plotting=False
+
+
+
     return f_dom, filtered_midlines_y, max_y
 
 
