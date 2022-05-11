@@ -66,6 +66,8 @@ import matplotlib.pyplot as plt
 
 ## This is an attempt at finding the midline in a more robust way. It works but the results are less reliable  ###
 
+import util.utils_unused as utils_unused
+
 def main(my_file, outdir, save, plotting, N_midline=15):
     '''Midline extraction function: creates midline of fish and centroid from input geometry
 
@@ -114,53 +116,72 @@ def main(my_file, outdir, save, plotting, N_midline=15):
 
      '''
     start_time = time.time()
-    # D = {}
-    # outdir = "mask_optimizer_dir/"  # "simple_example/"
+    D = {}
+    #outdir = "mask_optimizer_dir/"
+    #outdir = "my_data/masby_unused_output/"  # "simple_example/"
 
-    # use_ma = True
-    # 35/200
-    # neighbours = 20
-    # N_normals = 80  # Original length 400
-    # N_ma = 15
-    # plotting = True
+    use_ma = True
+    #35/200
+    neighbours = 20
+    N_normals = 80  # Original length 400
+    N_ma = 15
+    plotting = True
 
-    # denoise = 30
-    # denoise_delta = 30
-    # detect_planar = 30
+    denoise = 30
+    denoise_delta = 30
+    detect_planar = 30
 
-    # denoise_absmin = 30
-    # denoise_min = 30
+    denoise_absmin = 30
+    denoise_min = 30
 
     # Might need to find more robust way of loading original coords
-    # D['coords'] = np.load(outdir + my_file + "coords.npy")
+    D['coords'] = np.load(outdir + my_file + "/coords.npy")
     coords = np.load(outdir + my_file + "/coords.npy")
 
     # coords = D['coords']
 
-    # Reduce number of elements and calculate normals
-    # D['coords_normals'] = utils.array_decimator_set_len(outdir=outdir, input_array=D['coords'], new_len=N_normals,
-    #                                                    save_name="coords_normals", save=True)
-    # D['normals_normals'] = utils.compute_normals_my_func(coord=D['coords_normals'], outfile=outdir, k=neighbours)
+    #Reduce number of elements and calculate normals
+    D['coords_normals'] = utils_unused.array_decimator_set_len(outdir=outdir, input_array=D['coords'], new_len=N_normals,
+                                                       save_name="coords_normals", save=True)
+    D['normals_normals'] = utils_unused.compute_normals_my_func(coord=D['coords_normals'], outfile=outdir, k=neighbours)
 
-    # MANUALLY TURNED OFF PLOTTING
-    # D_k = utils.k_ma_iterator(input_coords=D['coords_normals'], input_normals=D['normals_normals'], N_ma=N_ma,
-    #                          outdir=outdir,save=save,N_normals=N_normals, neighbours=neighbours,plotting=False)
+    #MANUALLY TURNED OFF PLOTTING
+    D_k = utils_unused.k_ma_iterator(input_coords=D['coords_normals'], input_normals=D['normals_normals'], N_ma=N_ma,
+                             outdir=outdir,save=save,N_normals=N_normals, neighbours=neighbours,plotting=False)
 
-    # midlines_unfiltered = utils.ma_points_fitter(D_k)
-    # TODO: why is midlines_unfiltered changed when it should not be????
-    # midlines_filtered = utils.ma_filter(midlines_unfiltered,coords)
-    # midlines_interpolated = utils.midline_interpolation(midlines_filtered,N_midline-1)
+    midlines_unfiltered = utils_unused.ma_points_fitter(D_k)
+    #TODO: why is midlines_unfiltered changed when it should not be????
+    midlines_filtered = utils_unused.ma_filter(midlines_unfiltered,coords)
+    midlines_interpolated = utils_unused.midline_interpolation(midlines_filtered,N_midline-1)
 
-    midline_rib_approx = utils.midline_rib_approximation(coords, N_midline, save=save)
-    midline_angles, midline_angles_change = utils.midline_angles(midline_rib_approx, save=save)
+    #midline_rib_approx = utils.midline_rib_approximation(coords, N_midline, save=save)
+    #midline_angles, midline_angles_change = utils.midline_angles(midline_rib_approx, save=save)
 
     end_time = time.time()
     print("Calculations took : " + str(end_time - start_time) + " seconds")
 
     if plotting:
-        plt.plot(midline_angles * (180 / np.pi))
-        plt.show()
-        uplt.rib_approx(coords=coords, rib_midline=midline_rib_approx,midline_angles=midline_angles,midline_angles_change=midline_angles_change)
-        # uplt.midlines(midlines_unfiltered,midlines_filtered,midlines_interpolated,coords)
-
+        #plt.plot(midline_angles * (180 / np.pi))
+        #plt.show()
+        #uplt.rib_approx(coords=coords, rib_midline=midline_rib_approx,midline_angles=midline_angles,midline_angles_change=midline_angles_change)
+        uplt.midlines(midlines_unfiltered,midlines_filtered,midlines_interpolated,coords)
+    if save:
+        plt.savefig()
     print("Finished midline_extractor.py")
+
+if __name__ == "__main__":
+
+
+    #my_dir = "my_data/mask_output_Feb-17-2022_1216/masks/"
+    my_dir = "my_data/mask_output_april_Apr-27-2022_1618/masks/"
+    dir_files = os.listdir(my_dir)
+    save = False # set to True to save all calculations, set to False to not save anything
+    N_midline = 20
+    plotting = False
+    start_time = time.time()
+    count = 0
+    for my_file in dir_files:
+        main(my_file=my_file, outdir=my_dir, save=save, plotting=plotting, N_midline=N_midline)
+        count += 1
+    end_time = time.time()
+    print("Finished midline_extractor.py, processing " + str(count) + " files in {sec:2.3f} seconds".format(sec=end_time-start_time))
