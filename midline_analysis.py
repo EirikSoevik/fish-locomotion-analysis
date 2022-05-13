@@ -108,7 +108,7 @@ def main():
 
 
     # TODO: find wavenumber
-    #wave_length, k = autil.wave_number(phase_dom, filtered_midlines_y, f_dom, sample_spacing, norm_x_vec)
+    wave_length, k = autil.wave_number(phase_dom, filtered_midlines_y, f_dom, sample_spacing, norm_x_vec)
 
     #thingy_xfit, thingy_yfit, Pm_vec, Pm = autil.combined_thingy(k, phase_dom, norm_x[0,:], plotting, "thingy_plot", save_dir, save=False)
 
