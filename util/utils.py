@@ -102,8 +102,6 @@ def midline_rib_approximation(coords, new_len):
     print("Start, end, len", str(x_start), str(x_end), str(len(x_new)))
     #print("len(x_new):",len(x_new))
 
-
-
     for i in range(len(x_new) - 1):
         start = x_new[i]
         end = x_new[i + 1]
@@ -117,10 +115,10 @@ def midline_rib_approximation(coords, new_len):
                 batch_x.append(j[0])
                 batch_count += 1
 
-        if batch_count == 0:
+        if batch_count == 0: # if point is outside body boundary
             midline[i] = np.nan
             print("i: " + str(i))
-            print("midline[i] = nan")
+            print("Something went wrong! midline[i] = nan (point outside body boundary")
         elif batch_count > 0:
             if i==0:
                 midline[0, 0] = x_start

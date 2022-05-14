@@ -12,6 +12,8 @@ from masbpy.ma import MASB
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
+from util import utils
+
 def normal_angles(D, outdir, save=True):
     """Calculates the angles in radians of every instance of the normal vector."""
     angles = np.zeros(len(D['normals']))
@@ -217,7 +219,7 @@ def k_ma_iterator(input_coords, input_normals, N_ma, outdir, save, N_normals, ne
         D_k[k]['coords'] = k_coords[k]
         D_k[k]['normals'] = k_normals[k]
         D_k[k], D_k[k]['max_r'] = compute_ma_my_func(D_k[k], outfile=outdir)
-        D_k[k]['centroid'] = find_centroid(D_k[k]['coords'], outdir=outdir)
+        D_k[k]['centroid'] = utils.find_centroid(D_k[k]['coords'], outdir=outdir)
         D_k[k]['angles'] = normal_angles(D=D_k[k], outdir=outdir, save=save)
         if plotting: uplt.all_in_four_2(D_k[k], neighbours, N_ma, N_normals, D_k[k]['centroid'],
                                         original_coords=input_coords, original_normals=input_normals)
@@ -293,12 +295,12 @@ def normal_noise_detector(D, angles, angle_threshold, batch_size):
         #    batch_sum +=
         # angle_error[i] +=
 
-        def compute_normal(neighbours):
-            pca = PCA(n_components=2)
-            pca.fit(neighbours)
-            plane_normal = pca.components_[1]  # this is a normalized normal
-            # print(plane_normal)
-            return plane_normal
+def compute_normal(neighbours):
+    pca = PCA(n_components=2)
+    pca.fit(neighbours)
+    plane_normal = pca.components_[1]  # this is a normalized normal
+    # print(plane_normal)
+    return plane_normal
 
 def normal_angle_smoother(D, angle_threshold, batch_size):
     """this smooths noise in the normal vector"""

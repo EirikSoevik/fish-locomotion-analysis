@@ -137,13 +137,14 @@ def main(my_file, outdir, save, plotting, N_midline=15):
     # Might need to find more robust way of loading original coords
     D['coords'] = np.load(outdir + my_file + "/coords.npy")
     coords = np.load(outdir + my_file + "/coords.npy")
-
+    D['centroid'] = utils.find_centroid(D['coords'],outdir,save=save)
     # coords = D['coords']
 
     #Reduce number of elements and calculate normals
     D['coords_normals'] = utils_unused.array_decimator_set_len(outdir=outdir, input_array=D['coords'], new_len=N_normals,
                                                        save_name="coords_normals", save=True)
     D['normals_normals'] = utils_unused.compute_normals_my_func(coord=D['coords_normals'], outfile=outdir, k=neighbours)
+
 
     #MANUALLY TURNED OFF PLOTTING
     D_k = utils_unused.k_ma_iterator(input_coords=D['coords_normals'], input_normals=D['normals_normals'], N_ma=N_ma,
@@ -161,10 +162,14 @@ def main(my_file, outdir, save, plotting, N_midline=15):
     print("Calculations took : " + str(end_time - start_time) + " seconds")
 
     if plotting:
+        #uplt.print_dictionary_info(D,max_r=D_k[0]['max_r'])
         #plt.plot(midline_angles * (180 / np.pi))
         #plt.show()
         #uplt.rib_approx(coords=coords, rib_midline=midline_rib_approx,midline_angles=midline_angles,midline_angles_change=midline_angles_change)
         uplt.midlines(midlines_unfiltered,midlines_filtered,midlines_interpolated,coords)
+        uplt.all_in_four(D_k[0],D, neighbours,N_ma,N_normals,D['centroid'])
+        uplt.normal_quiver(D_k[0]['coords_normals'],D_k[0]['normals_normals'],neighbours,True)
+    save=False
     if save:
         plt.savefig()
     print("Finished midline_extractor.py")

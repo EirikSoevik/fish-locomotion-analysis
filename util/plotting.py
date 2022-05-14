@@ -59,7 +59,7 @@ def linearly(datadict, key):
     plt.show()
 
 
-def all_in_four(datadict,k,N_ma, N_normals,centroid):
+def all_in_four(datadict,D,k,N_ma, N_normals,centroid):
 
     fig, axs = plt.subplots(2,2)
     axs[0,0].scatter(datadict['coords'][:,0], datadict['coords'][:,1], label='coords')
@@ -69,8 +69,8 @@ def all_in_four(datadict,k,N_ma, N_normals,centroid):
     axs[0,0].legend()
 
     axs[0,1].scatter(centroid[0], centroid[1], label='centroid')
-    axs[0,1].quiver(datadict['coords_normals'][:,0],datadict['coords_normals'][:,1],datadict['normals_normals'][:,0],datadict['normals_normals'][:,1], pivot='tip', label='normal vectors')
-    axs[0,1].scatter(datadict['coords_normals'][:,0], datadict['coords_normals'][:,1])
+    axs[0,1].quiver(D['coords_normals'][:,0],D['coords_normals'][:,1],D['normals_normals'][:,0],D['normals_normals'][:,1], pivot='tip', label='normal vectors')
+    axs[0,1].scatter(D['coords_normals'][:,0], D['coords_normals'][:,1])
     axs[0,1].set_title('Normal vectors, k=' + str(k) + ' n = ' + str(N_normals))
 
     axs[1,0].scatter(datadict['ma_coords_in'][:,0], datadict['ma_coords_in'][:,1], label='internal coords')
@@ -86,6 +86,7 @@ def all_in_four(datadict,k,N_ma, N_normals,centroid):
     axs[1,1].legend()
     axs[1,1].set_title('All together')
     set_plot_position()
+    fig.tight_layout()
     plt.show()
 
 def all_in_four_2(datadict,neighbours,N_ma, N_normals,centroid, original_coords, original_normals):
