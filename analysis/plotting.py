@@ -344,7 +344,7 @@ def simple_plot(x_vec, y_vec, my_title, save_dir, save=False):
 
 
 def local_maxima_plot(xfit, yfit_t, yfit_f, y_max_f, y_max_t, polynomial_t, polynomial_f, save_dir, save=False):
-
+    # TODO: normalise fft plot
 
 
     plt.figure()
@@ -428,6 +428,7 @@ def fft_evaluation(old_y, midlines_y, filtered_y, scale_factor, wait=0.2):
     plt.xlabel("time")
     plt.ylabel("y-axis")
 
+
     line1, = ax.plot(old_y[:,0], 'b''')
     line2, = ax.plot(filtered_y[:,0], 'b--')
     line3, = ax.plot(midlines_y[:,0], 'r*')
@@ -444,3 +445,48 @@ def fft_evaluation(old_y, midlines_y, filtered_y, scale_factor, wait=0.2):
         time.sleep(wait)
 
     figure.canvas.flush_events()
+
+def thingy_plot(Pm, norm_x, xfit, yfit, save_dir, my_title, save=False):
+
+    print("thingy plot")
+    plt.figure()
+    plt.plot(norm_x, Pm, 'ro', label='Pm(x)')
+    plt.plot(xfit, yfit, 'b-', label='3rd degree curve fit')
+    plt.title("Pm(x)=k*phase*x/BL")
+    plt.xlabel("x/BL")
+    plt.ylabel("Pm(x)")
+    plt.show()
+
+    if save:
+        plt.savefig(save_dir+my_title+".png")
+
+
+def fft_evaluation2(midlines_y, filtered_y, time_vec, wait=0.2):
+    m_time, m_space = midlines_y.shape
+
+    ymin = min(np.min(midlines_y), np.min(filtered_y))
+    ymax = max(np.max(midlines_y), np.max(filtered_y))
+
+    plt.ion()
+    figure, ax = plt.subplots(figsize=(10, 8))
+    ax.set_ylim([ymin * 0.95, ymax * 1.05])
+    # ax.set_aspect('equal', adjustable='datalim') #datalim
+
+    plt.title("Midline and fourier approx. for pos: " + str(0))
+    plt.xlabel("time")
+    plt.ylabel("y-axis")
+
+    line1, = ax.plot(time_vec, filtered_y[:, 0], 'b--')
+    line2, = ax.plot(time_vec, midlines_y[:, 0], 'r-')
+
+    for s in range(1, m_space):
+        line1.set_ydata(filtered_y[:, s])
+        line2.set_ydata(midlines_y[:, s])
+        plt.title("Midline and fourier approx. for frame: " + str(s))
+        figure.canvas.draw()
+        figure.canvas.flush_events()
+
+        time.sleep(wait)
+
+    figure.canvas.flush_events()
+
