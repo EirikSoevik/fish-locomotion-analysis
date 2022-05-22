@@ -32,16 +32,24 @@ def set_plot_position(x=3100,y=100,dx=2000,dy=900):
     # to put it into the upper left corner for example:
     mngr.window.setGeometry(x,y,dx,dy)
 
-def frame_output(coords_x, coords_y, midline_x, midline_y, centroid, frame, my_title):
+def frame_output(coords_x, coords_y, midline_x, midline_y, centroid, start_frame, end_frame, my_title, save, save_dir):
 
     figure, ax = plt.subplots(figsize=(10, 8))
 
-    plt.plot(coords_x[frame,:],coords_y[frame,:], midline_x[frame,:],midline_y[frame,:],centroid[frame,0], centroid[frame,1])
-    #plt.legend("coords", "midline", "centroid")
+    plt.plot(coords_x[start_frame,:],coords_y[start_frame,:], 'b-', label="start_pos")
+    plt.plot(midline_x[start_frame,:],midline_y[start_frame,:],'r-', label="start midlines")
+    plt.plot(centroid[start_frame,0], centroid[start_frame,1],  'bo', label="start centroid")
+    plt.plot(coords_x[end_frame, :], coords_y[end_frame, :], 'b--', label="end pos")
+    plt.plot(midline_x[end_frame, :], midline_y[end_frame, :],'r--', label="end midline")
+    plt.plot(centroid[end_frame, 0], centroid[end_frame, 1],  'g*', label="end centroid")
+    plt.legend()
     ax.set_aspect('equal',adjustable='datalim')
     plt.title(my_title)
     plt.xlabel("x-axis")
     plt.ylabel("y-axis")
+
+    if save:
+        plt.savefig(save_dir+"start_end_pos.png")
 
 
 def midline_animation(x, y):
@@ -192,13 +200,13 @@ def all_splines_plot(spline_x, my_splines, my_title, save_dir, save=False):
         plt.savefig(save_dir+my_title+".png")
 
 def fourier_plot(f_x,f_y,N, my_title, save_dir, save=False):
-
+    #TODO: fix plot
     plt.figure()
-    #plt.plot(f_x, 2.0 / N * np.abs(f_y[0:N // 2]))
-    plt.plot(f_x, f_y)
-    plt.xlabel("f_x")
-    plt.ylabel("f_y")
-    plt.title("f_X/f_y fourier plot")
+    #plt.plot(f_x, 2.0 / N * np.abs(f_y[1:N // 2]))
+    plt.plot(f_x, f_y[0:N//2])
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("FFT amplitude")
+    plt.title("Fourier plot ")
     set_plot_position()
     plt.show()
     if save:
@@ -489,4 +497,49 @@ def fft_evaluation2(midlines_y, filtered_y, time_vec, wait=0.2):
         time.sleep(wait)
 
     figure.canvas.flush_events()
+
+def fish_characteristics(s1,s2,s3,s4,trav_ind):
+
+    s1_arr = np.array([1,	0.9,	0.517-0.957,	0.816,	0.63-0.91,	0.882,	0.772,	0.667,	0.698,	0.85-0.97,	1,	0.98-1.16,	0.95,	0.5-1.0,	0.85-0.97,	0.9])
+    s2_arr = np.array([0,0.25,0.02,0.0413,0,0.0518,0.0535,0.0562,0.0958,0,0,0,0.156,0.018,0.147,0.358])
+    s3_arr = np.array([0.12,	1,	0.1,	0.2004,	0.2,	0.1744,	0.1497,	0.152,	0.1617,	0.2,	0.275,	0.18,	0.936,	0.126,	1.018,	0.994])
+    s4_arr = np.array([0,	0.3,	0.3,	0.24,	0,	0.3372,	0.3209,	0.4045,	0.4371,	0,	0.2,	0,	0.25,	0.25,	0,	0.2])
+
+    trav_ind_arr = np.array([0.61-0.77,	0.627,	0.58-0.76,	0.6692,	0.68-0.78,	0.623,	0.72,	0.623,	0.77,	0.67-0.71,	0.665,	0.62-0.67,	0.626,	0.6-0.78,	0.769,	0.777])
+
+    plt.figure()
+    plt.hist(s2_arr)
+    plt.plot(s2,'ro')
+    plt.title("s2")
+
+    plt.figure()
+    plt.plot(s3_arr)
+    plt.plot(s3,'ro')
+    plt.title("s3")
+
+    plt.figure()
+    plt.scatter(s2_arr/s3_arr, trav_ind_arr)
+    plt.show()
+    #plt.plot(s2/s3, trav_ind,'ro')
+
+    s1_mean = np.mean(s1_arr)
+    s2_mean = np.mean(s2_arr)
+    s3_mean = np.mean(s3_arr)
+    s4_mean = np.mean(s4_arr)
+    trav_ind_mean = np.mean(trav_ind_arr)
+
+    s1_std = np.std(s1_arr)
+    s2_std = np.std(s2_arr)
+    s3_std = np.std(s3_arr)
+    s4_std = np.std(s4_arr)
+    trav_ind_std = np.std(trav_ind_arr)
+
+    print("Means: s1    s2  s3  s4  trav_ind")
+    print(s1_mean, s2_mean, s3_mean, s4_mean, trav_ind_mean)
+    print("Stds: ")
+    print(s1_std, s2_std, s3_std, s4_std, trav_ind_std)
+
+    print("")
+
+
 

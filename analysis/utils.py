@@ -5,7 +5,7 @@ from scipy.interpolate import interp1d
 import analysis.plotting as aplt
 from scipy.fft import fft,fftfreq, ifft
 import matplotlib.pyplot as plt
-
+from scipy.signal import hilbert, chirp
 
 def get_attributes(my_dir):
     """Creates a time-sorted dictionary with all information, which can then be looped to access specifics"""
@@ -228,12 +228,12 @@ def fourier_analysis_all(midline_x, midline_y, T, plotting):
         #y_vec = y_vec - np.mean(y_vec)
         f_y_total[:,s] = np.fft.fft(y_vec)
 
-        f_y[:,s] = 2.0 / N * np.abs(f_y_total[:,s])
+        f_y[:,s] = 2.0 / N * np.abs(np.fft.fft(y_vec - np.mean(y_vec)))
         #f_y_c[:,s] = f_y1[0:N//2]
         phase[:,s] = np.angle(f_y_total[0:N//2, s])
 
 
-    return f_x1, f_y, N, f_y_total, phase
+    return f_x1, f_y, N, f_y_total, phase, f_x
 
 def wave_number(phase, filtered_midlines_y, f_dom, sample_spacing, norm_x):
     """k: wave number
@@ -252,7 +252,7 @@ def wave_number(phase, filtered_midlines_y, f_dom, sample_spacing, norm_x):
     #     #k[s] = (2*np.pi) / wave_length[s]
     #     k[s] = phase[s]/norm_x[s]
     #     wave_length[s] = 2*np.pi / k[s]
-    k = (phase[-1] - phase[0])
+    k = -(phase[-1] - phase[0])
     wave_length = 2*np.pi/k
 
     return wave_length, k
@@ -356,6 +356,7 @@ def fft_analysis(f_x, f_y_total, midlines_y, phase, plotting):
     plotting=False#True
     if plotting:
         aplt.fft_evaluation(old_y,midlines_y,filtered_midlines_y,scale_factor, wait)
+
     return f_dom, filtered_midlines_y, max_y, phase_dom
 
 
@@ -455,3 +456,109 @@ def phase_filter(phase_dom):
         phase_dom[i] = phase_dom[i]+2*np.pi
 
     return phase_dom
+
+def trav_index(midlines_y, sample_spacing):
+    ### complex modal analysis
+
+    start_frame = 3
+    end_frame = 14
+    frame_len = end_frame - start_frame
+
+    time_dim, space_dim = midlines_y.shape
+
+    midlines_y = midlines_y[start_frame:end_frame, :]
+    time_vec = np.arange(0,end_frame-start_frame,1)
+
+    duration = (end_frame - start_frame) / sample_spacing
+    fs = 50
+    analytic_signal = np.zeros([frame_len, space_dim], dtype=complex)
+    z = np.zeros([frame_len, space_dim], dtype=complex)
+    # z_bar = np.zeros([frame_len, space_dim], dtype=complex)
+
+    for s in range(space_dim):
+        analytic_signal[:, s] = hilbert(midlines_y[:, s] - np.mean(midlines_y[:, s]), axis=0)
+        # z[:,s] = complex(midlines_y[:,s], analytic_signal[:,s])
+        # z[:,s].real = midlines_y[:,s]
+        # z[:,s].imag = analytic_signal[:,s]
+
+    z = analytic_signal
+    # z_bar = np.conjugate(z)
+    z_bar = z.conj(z)
+    z_bar = z_bar.T
+    R = np.matmul(z.T, z_bar.T) / frame_len
+    # R = np.dot(z.T,z_bar.T)/frame_len
+    v, w = np.linalg.eigh(R)
+    #w_mat = np.zeros([20, 40])
+    #w_mat[0:20, 0:20] = w.real
+    #w_mat[0:20, 20:40] = w.imag
+    trav_index = np.zeros([space_dim])
+    for s in range(space_dim):
+        w_mat = np.array([w[s,:].real, w[s,:].imag]).T
+        trav_index[s] = 1 / np.linalg.cond(w_mat)
+
+    # amplitude_envelope = np.abs(analytic_signal)
+    # instantaneous_phase = np.unwrap(np.angle(analytic_signal))
+    # instantaneous_frequency = (np.diff(instantaneous_phase) /
+    #                            (2.0 * np.pi) * fs)
+    # fig, (ax0, ax1) = plt.subplots(nrows=2)
+    # ax0.plot(time_vec, midlines_y, label='signal')
+    # ax0.plot(time_vec, amplitude_envelope, label='envelope')
+    # ax0.set_xlabel("time in seconds")
+    # ax0.legend()
+    # ax1.plot(time_vec[1:], instantaneous_frequency)
+    # ax1.set_xlabel("time in seconds")
+    # ax1.set_ylim(0.0, 120.0)
+    # fig.tight_layout()
+    # plt.show()
+
+    return trav_index
+
+def G_approx(amp_y_t, norm_x, norm_y, wave_number, wave_length):
+
+    g0, g1, g2 = np.polynomial.polynomial.Polynomial.fit(norm_x,amp_y_t,2)
+
+
+
+
+    print("Calculating values for G(x):")
+    print("G(x) = g0 + g1x + g2x^2")
+    print("s2 = " + str(g0))
+    print("g1:" + str(g1))
+    print("g2:" + str(g2))
+    print("")
+    print("s4 = -g1 + (-2g2-2g0)s4+4g2s4^2")
+    a = 4*g2
+    b = -2*(g1-g2)
+    c = -g1
+    s4sol1 = (-b-np.sqrt((b**2) - (4*a*c)))/(2*a)
+    s4sol2 = (-b+np.sqrt((b**2) - (4*a*c)))/(2*a)
+    print("s4 solutions are {:1.2f} and {:1.2f}".format(s4sol1,s4sol2))
+
+    #s3sol1 = g2+g0-2*g2*s4sol1
+    #s3sol2 = g2+g0-2*g2*s4sol2
+    s3sol1 = g2 * (1 - 2 * s4sol1) + g0
+    s3sol2 = g2 * (1 - 2 * s4sol2) + g0
+    print("s3 solutions are {:1.2f} and {:1.2f}".format(s3sol1, s3sol2))
+    print("")
+    print("Solutions are: ")
+    print("s2(BL): {:1.4f} s3(BL): {:1.4f} s4(BL): {:1.4f}".format(g0,s3sol1,s4sol1))
+    print("s2(BL): {:1.4f} s3(BL): {:1.4f} s4(BL): {:1.4f}".format(g0,s3sol2,s4sol2))
+
+
+
+    return g0,s3sol2,s4sol2
+
+def read_measurments():
+    from openpyxl import Workbook
+
+    loc = "/home/eirik/Documents/Master/fish_measurments.ods"
+    wb = Workbook()
+    ws = wb.active
+
+
+
+
+
+
+
+

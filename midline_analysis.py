@@ -1,6 +1,6 @@
 import numpy as np
 from analysis import utils as autil
-from analysis import locomotion_extraction as loce
+#from analysis import locomotion_extraction as loce
 #import matplotlib
 #matplotlib.use('Qt5Agg')
 # matplotlib.use('QtAgg')
@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 # import util
 import os
 from analysis import plotting as aplt
+
+from scipy.io import savemat
 
 
 def main():
@@ -69,11 +71,11 @@ def main():
     #       Choose only a few swimming periods, for example 5 periods:
     start_frame = 3
     end_frame = 83
+    frame_len = end_frame-start_frame
 
     if plotting:
-        aplt.frame_output(coords_x, coords_y, midlines_x, midlines_y, centroid, frame=start_frame, my_title="Starting pos. for analysis")
-        aplt.frame_output(coords_x, coords_y, midlines_x, midlines_y, centroid, frame=end_frame,
-                          my_title="End pos. for analysis")
+        aplt.frame_output(coords_x, coords_y, midlines_x, midlines_y, centroid, start_frame=start_frame, end_frame = end_frame, my_title="Starting and ending pos. for analysis", save=save, save_dir=save_dir)
+
 
     norm_x = new_midlines_x[start_frame:end_frame, :]
     norm_y = new_midlines_y[start_frame:end_frame, :]
@@ -93,8 +95,11 @@ def main():
     #       To verify
     #aplt.point_in_time(midlines_y, "midline_y end", save_dir=save_dir, pos=-1, save=False)
 
-    f_x, f_y, N, f_y_total, phase = autil.fourier_analysis_all(midlines_x,midlines_y, sample_spacing, plotting)
-    f_dom, filtered_midlines_y, y_max_f, phase_dom = autil.fft_analysis(f_x, f_y_total, midlines_y, phase, plotting)
+    f_x1, f_y, N, f_y_total, phase, f_x = autil.fourier_analysis_all(midlines_x,midlines_y, sample_spacing, plotting)
+    f_dom, filtered_midlines_y, y_max_f, phase_dom = autil.fft_analysis(f_x1, f_y_total, midlines_y, phase, plotting)
+
+    if plotting:
+        aplt.fourier_plot(f_x, f_y, N, "fourier_plot", save_dir=save_dir, save=save)
 
     #aplt.body_midline_centroid_animation(coords_x[start_frame:end_frame, :], coords_y[start_frame:end_frame, :],
     #                                     midlines_x, filtered_midlines_y, centroid)
@@ -107,6 +112,7 @@ def main():
     amp_x_t, amp_y_t, polynomial_t = autil.curve_fit(x_vec=new_midlines_x[0, :], y_vec=y_max_t, order=2, output_length=20)
 
 
+
     # TODO: find wavenumber
     wave_length, k = autil.wave_number(phase_dom, filtered_midlines_y, f_dom, sample_spacing, norm_x_vec)
 
@@ -114,9 +120,10 @@ def main():
 
     #steady_motion = autil.steady_motion(polynomial_t, f_dom[0], time_vec, Pm, norm_x[0,:])
 
+    trav_index = autil.trav_index(midlines_y, sample_spacing)
 
-
-
+    s2, s3, s4 = autil.G_approx(amp_y_t, norm_x[0,:], norm_y, k, wave_length)
+    aplt.fish_characteristics(wave_length, s2, s3, s4, trav_index)
 
     if plotting:
         aplt.fft_evaluation2(midlines_y, filtered_midlines_y, time_vec, wait=0.2)
@@ -138,17 +145,16 @@ def main():
 
 
         #aplt.all_splines_plot(spline_x, my_splines, "all_splines", save_dir=save_dir, save=save)
-        aplt.fourier_plot(f_x, f_y, N, "fourier_plot", save_dir=save_dir, save=save)
+        aplt.fourier_plot(f_x, f_y_total, N, "fourier_plot", save_dir=save_dir, save=save)
 
         aplt.local_maxima_plot(amp_x_t, amp_y_f, amp_y_f, y_max_f, y_max_t, polynomial_t, polynomial_f, save_dir, save)
         #aplt.fourier_animation(f_x,f_y,N)
 
-    for t in range(len(midlines_x)):
-        loce.least_squares(midlines_x[t,:], midlines_y[t,:])
+    #for t in range(len(midlines_x)):
+    #    loce.least_squares(midlines_x[t,:], midlines_y[t,:])
 
     #save=True
     if save:
-        from scipy.io import savemat
         savemat(save_dir+'midlines_y.mat', {'my_data': midlines_y})
     print("Finished main")
 
