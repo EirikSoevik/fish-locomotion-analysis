@@ -420,7 +420,7 @@ def phase_animation(phase):
         plt.plot(phase[:,i])
     plt.show()
 
-def fft_evaluation(old_y, midlines_y, filtered_y, scale_factor, wait=0.2):
+def fft_evaluation(old_y, midlines_y, filtered_y, save_dir, wait=0.2):
 
     m_time, m_space = midlines_y.shape
 
@@ -432,10 +432,9 @@ def fft_evaluation(old_y, midlines_y, filtered_y, scale_factor, wait=0.2):
     ax.set_ylim([ymin*0.95, ymax*1.05])
     #ax.set_aspect('equal', adjustable='datalim') #datalim
 
-    plt.title("Midline and fourier approx. for pos: " + str(0) + " scale factor: " + str(scale_factor))
+    plt.title("Midline and fourier approx. for pos: " + str(0))
     plt.xlabel("time")
     plt.ylabel("y-axis")
-
 
     line1, = ax.plot(old_y[:,0], 'b''')
     line2, = ax.plot(filtered_y[:,0], 'b--')
@@ -446,11 +445,12 @@ def fft_evaluation(old_y, midlines_y, filtered_y, scale_factor, wait=0.2):
         line1.set_ydata(old_y[:, s])
         line2.set_ydata(filtered_y[:, s])
         line3.set_ydata(midlines_y[:, s])
-        plt.title("Midline and fourier approx. for frame: " + str(s) + " scale factor: " + str(scale_factor))
+        plt.title("Midline and fourier approx. for frame: " + str(s))
         figure.canvas.draw()
         figure.canvas.flush_events()
-
+        plt.savefig(save_dir + "fft" + str(s) + ".png")
         time.sleep(wait)
+
 
     figure.canvas.flush_events()
 

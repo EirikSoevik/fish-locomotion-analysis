@@ -145,7 +145,7 @@ def midline_statistics(midlines_x, midlines_y):
     mean_length = np.mean(l)
 
 
-    print("Property          | Mean    | Std. dev ")
+    print("Property          | Mean    | Var ")
     print("----------------------------------------")
     print("Midline length     {:3.2f}     {:1.2f}".format(mean_length,std_length))
     print("dL/dx               {:2.2f}     {:1.2f}".format(mean_dl_tot,std_dl_tot))
@@ -257,7 +257,7 @@ def wave_number(phase, filtered_midlines_y, f_dom, sample_spacing, norm_x):
 
     return wave_length, k
 
-def fft_analysis(f_x, f_y_total, midlines_y, phase, plotting):
+def fft_analysis(f_x, f_y_total, midlines_y, phase, save_dir, plotting):
     """ Analysis of fft signal, finds dominating freq., wave number, etc.
 
     Note that the dominant frequency might be due to the fish moving and so the lowest peak might need to be subtracted
@@ -298,8 +298,8 @@ def fft_analysis(f_x, f_y_total, midlines_y, phase, plotting):
         a1 = ff[1:nfft+1]
         a2 = ff[2*nfft+2:nfft+1:-1]
 
-        ind_start = 3
-        ind_end = 10
+        ind_start = 1
+        ind_end = 6
         b1 = np.zeros([len(a1)], dtype='complex')
         b1[ind_start:ind_end] = a1[ind_start:ind_end]
 
@@ -319,7 +319,7 @@ def fft_analysis(f_x, f_y_total, midlines_y, phase, plotting):
         f_y = np.abs(f_y_total[1:len(f_y_total)//2, s])
 
         # Dominating frequency
-        max_y[s] = f_y.max()
+        max_y[s] = np.max( 2.0 / len(f_y_total) * f_y)
         max_y_ind[s] = f_y.argmax()+1
         f_dom[s] = f_x[max_y_ind[s]]
         T_dom[s] = 1/f_dom[s]
@@ -334,8 +334,6 @@ def fft_analysis(f_x, f_y_total, midlines_y, phase, plotting):
         new_fy = np.append(new_vec, f_y_total[nfy_time//2, s])
         new_fy[nfy_time//2] = 0
         new_fy = np.append(new_fy,new_vec[-1:0:-1])
-
-
 
         #plt.plot(new_fy)
         #plt.show()
@@ -355,10 +353,20 @@ def fft_analysis(f_x, f_y_total, midlines_y, phase, plotting):
 
     plotting=False#True
     if plotting:
-        aplt.fft_evaluation(old_y,midlines_y,filtered_midlines_y,scale_factor, wait)
+        aplt.fft_evaluation(old_y,midlines_y,filtered_midlines_y, save_dir, wait)
 
     return f_dom, filtered_midlines_y, max_y, phase_dom
 
+def normalize_midlines(midlines_y,mean_length):
+    time_dim, space = midlines_y.shape
+    y_displacement = np.zeros([space])
+
+    for s in range(space):
+
+        y_mean = np.mean(midlines_y[:,s])
+        y_displacement[s] = (midlines_y[:,s]-y_mean)
+
+    return y_displacement
 
 def lateral_displacement(mean_length, midlines_y):
 
